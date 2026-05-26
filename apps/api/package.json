@@ -14,12 +14,14 @@
   "dependencies": {
     "@fastify/cors": "^10.0.0",
     "@pace-lab/shared": "workspace:*",
+    "@prisma/client": "6",
     "fastify": "^5.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "pino-pretty": "^11.3.0",
+    "prisma": "6",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

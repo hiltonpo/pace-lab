@@ -1,3 +1,4 @@
+import { prisma } from "./db";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { SHARED_VERSION } from "@pace-lab/shared";
@@ -16,11 +17,15 @@ await app.register(cors, {
   credentials: true,
 });
 
-app.get("/api/health", async () => ({
-  status: "ok",
-  shared: SHARED_VERSION,
-  ts: new Date().toISOString(),
-}));
+app.get("/api/health", async () => {
+  await prisma.$queryRaw`SELECT 1`;
+  return {
+    status: "ok",
+    db: "connected",
+    shared: SHARED_VERSION,
+    ts: new Date().toISOString(),
+  };
+});
 
 const PORT = Number(process.env.PORT ?? 3000);
 
