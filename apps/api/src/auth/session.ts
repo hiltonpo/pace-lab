@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { prisma } from "../db";
+import { prisma } from "../db.js";
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 天
 

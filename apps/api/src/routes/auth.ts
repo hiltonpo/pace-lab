@@ -1,18 +1,18 @@
 import type { FastifyInstance } from "fastify";
 import { generateState, generateCodeVerifier } from "arctic";
-import { google } from "../auth/google";
-import { prisma } from "../db";
+import { google } from "../auth/google.js";
+import { prisma } from "../db.js";
 import {
   generateSessionToken,
   createSession,
   validateSessionToken,
   invalidateSession,
-} from "../auth/session";
+} from "../auth/session.js";
 import {
   SESSION_COOKIE_NAME,
   setSessionCookie,
   clearSessionCookie,
-} from "../auth/cookie";
+} from "../auth/cookie.js";
 
 export async function authRoutes(app: FastifyInstance) {
   // ===== Route 1：把使用者導去 Google（這段跟之前一樣，用 Arctic）=====

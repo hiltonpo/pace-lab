@@ -1,12 +1,12 @@
 if (process.env.NODE_ENV !== "production") {
   await import("dotenv/config");
 }
-import { prisma } from "./db";
+import { prisma } from "./db.js";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { SHARED_VERSION } from "@pace-lab/shared";
 import cookie from "@fastify/cookie";
-import { authRoutes } from "./routes/auth";
+import { authRoutes } from "./routes/auth.js";
 
 const app = Fastify({
   logger: {
