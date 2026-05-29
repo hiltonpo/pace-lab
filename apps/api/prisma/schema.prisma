@@ -30,3 +30,4 @@ model Session {
   @@index([userId])
   @@map("sessions")
 }
+

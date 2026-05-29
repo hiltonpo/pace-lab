@@ -12,10 +12,14 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.0",
     "@pace-lab/shared": "workspace:*",
     "@prisma/client": "6",
+    "arctic": "^3.7.0",
+    "dotenv": "^17.4.2",
     "fastify": "^5.0.0",
+    "oslo": "^1.2.1",
     "zod": "^3.23.0"
   },
   "devDependencies": {
