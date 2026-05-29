@@ -1,23 +1,54 @@
-import { useEffect, useState } from "react";
-import { SHARED_VERSION } from "@pace-lab/shared";
-
-type Health = { status: string; shared: string; ts: string };
+import { useMe, useLogout } from "./hooks/useMe";
 
 export function App() {
-  const [health, setHealth] = useState<Health | null>(null);
+  const { data: user, isLoading } = useMe();
+  const logout = useLogout();
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then(setHealth)
-      .catch(console.error);
-  }, []);
+  if (isLoading) {
+    return <div style={{ padding: 32 }}>Loading...</div>;
+  }
 
   return (
-    <div style={{ fontFamily: "system-ui", padding: 32 }}>
-      <h1>pace lab</h1>
-      <p>shared version (from frontend): {SHARED_VERSION}</p>
-      <p>backend health: {health ? JSON.stringify(health) : "loading..."}</p>
+    <div style={{ fontFamily: "system-ui", padding: 32, maxWidth: 600 }}>
+      <h1>pace lab 🏃</h1>
+
+      {user ? (
+        <div>
+          <p>
+            ようこそ、<strong>{user.name}</strong> さん
+          </p>
+          <p style={{ color: "#666", fontSize: 14 }}>{user.email}</p>
+          <button
+            onClick={() => logout.mutate()}
+            disabled={logout.isPending}
+            style={{
+              marginTop: 16,
+              padding: "8px 16px",
+              cursor: "pointer",
+            }}
+          >
+            {logout.isPending ? "ログアウト中..." : "ログアウト"}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <p>マラソントレーニング設計室へようこそ</p>
+          <a
+            href="http://localhost:3000/api/auth/google"
+            style={{
+              display: "inline-block",
+              marginTop: 16,
+              padding: "10px 20px",
+              background: "#4285f4",
+              color: "white",
+              textDecoration: "none",
+              borderRadius: 4,
+            }}
+          >
+            Google でログイン
+          </a>
+        </div>
+      )}
     </div>
   );
 }
