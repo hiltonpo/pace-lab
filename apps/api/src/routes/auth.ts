@@ -29,20 +29,17 @@ export async function authRoutes(app: FastifyInstance) {
     ]);
 
     // 把 state 跟 codeVerifier 暫存在 cookie，callback 時要拿來核對
-    reply.setCookie("google_oauth_state", state, {
+    const isProd = process.env.NODE_ENV === "production";
+    const oauthCookieBase = {
       path: "/",
       httpOnly: true,
-      maxAge: 60 * 10, // 10 分鐘
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
-    reply.setCookie("google_code_verifier", codeVerifier, {
-      path: "/",
-      httpOnly: true,
-      maxAge: 60 * 10,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
+      maxAge: 600,
+      sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+      secure: isProd,
+    };
+
+    reply.setCookie("google_oauth_state", state, oauthCookieBase);
+    reply.setCookie("google_code_verifier", codeVerifier, oauthCookieBase);
 
     // 把使用者導去 Google 登入頁
     return reply.redirect(url.toString());
@@ -107,7 +104,8 @@ export async function authRoutes(app: FastifyInstance) {
       setSessionCookie(reply, token, session.expiresAt);
 
       // 導回前端首頁
-      return reply.redirect("http://localhost:5173/");
+      const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+      return reply.redirect(frontendUrl + "/");
     } catch (err) {
       app.log.error(err);
       return reply.status(500).send({ error: "Authentication failed" });

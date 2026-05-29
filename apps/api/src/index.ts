@@ -1,4 +1,6 @@
-import "dotenv/config";
+if (process.env.NODE_ENV !== "production") {
+  await import("dotenv/config");
+}
 import { prisma } from "./db";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
@@ -15,8 +17,12 @@ const app = Fastify({
   },
 });
 
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ["http://localhost:5173"];
+
 await app.register(cors, {
-  origin: ["http://localhost:5173"],
+  origin: allowedOrigins,
   credentials: true,
 });
 
