@@ -1,5 +1,7 @@
 import { useMe, useLogout } from "./hooks/useMe";
 
+const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+
 export function App() {
   const { data: user, isLoading } = useMe();
   const logout = useLogout();
@@ -34,7 +36,7 @@ export function App() {
         <div>
           <p>マラソントレーニング設計室へようこそ</p>
           <a
-            href="http://localhost:3000/api/auth/google"
+            href={`${apiBase}/api/auth/google`}
             style={{
               display: "inline-block",
               marginTop: 16,
