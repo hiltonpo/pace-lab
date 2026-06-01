@@ -24,3 +24,7 @@ Web runs at http://localhost:5173, API at http://localhost:3000.
 ## Status
 
 🚧 In active development. Currently: Sprint 1 (foundation).
+
+## 技術文件
+
+- [Railway 上線實戰指南](./docs/railway-deploy-guide.md)
