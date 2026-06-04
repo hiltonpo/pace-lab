@@ -1,0 +1,15 @@
+{
+  "app": {
+    "name": "pace lab",
+    "tagline": "馬拉松訓練設計室"
+  },
+  "auth": {
+    "loginWithGoogle": "使用 Google 登入",
+    "logout": "登出",
+    "loggingOut": "登出中…",
+    "welcome": "歡迎，{{name}}"
+  },
+  "common": {
+    "loading": "載入中…"
+  }
+}

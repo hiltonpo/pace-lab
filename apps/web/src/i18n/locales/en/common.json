@@ -1,0 +1,15 @@
+{
+  "app": {
+    "name": "pace lab",
+    "tagline": "Marathon Training Lab"
+  },
+  "auth": {
+    "loginWithGoogle": "Sign in with Google",
+    "logout": "Logout",
+    "loggingOut": "Logging out…",
+    "welcome": "Welcome, {{name}}"
+  },
+  "common": {
+    "loading": "Loading…"
+  }
+}
