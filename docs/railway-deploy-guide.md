@@ -1,70 +1,49 @@
-# Railway 上線實戰指南（前端工程師視角）
+# Railway 部署指南
 
-> 給「主要寫 Vue/React 前端、偶爾要部後端」的工程師。  
-> 從 pnpm monorepo + Node/TS + Prisma + Postgres 的實戰中整理。
+pnpm monorepo + Node/TS + Prisma + Postgres 部署到 Railway 的流程與常見問題處理。
 
-## 為什麼這份文件存在
+## 適用情境
 
-第一次部署到 Railway 時，會在「本地能跑、線上 100% 跑不起來」之間反覆撞牆。  
-踩過的雷其實只有幾類，但分散在 monorepo 設定、套件管理、TS 編譯、ESM 規範、環境變數這幾個面向，很難一次抓到。  
-這份文件用「我下次要做什麼」的順序整理，照走可以省下半天到一天的試錯。
-
----
-
-## 心智準備：本地能跑 ≠ 線上能跑
-
-下面這些開發時不會出事的設計，在 Railway 上 100% 會炸：
-
-| 本地能跑的原因                           | 上線炸的原因                                         |
-| ---------------------------------------- | ---------------------------------------------------- |
-| `tsx` / Vite 即時編譯 `.ts`              | Production 用純 Node 跑 JS，不認 `.ts`               |
-| monorepo 內部套件 `main` 指 `.ts`        | 純 Node 載入時找不到 `.js`                           |
-| ESM import 沒寫 `.js` 副檔名             | 編譯後跑時找不到模組                                 |
-| `localhost:5173` / `localhost:3000` 寫死 | Production 是不同網域，cookie/CORS 失效              |
-| `sameSite: lax`                          | 跨網域 cookie 需要 `sameSite: none` + `secure: true` |
-| `.env` 本地自動讀                        | Production 由 Platform 注入，多讀一次反而出問題      |
-
-**心法**：寫每段 code 都問自己「production 環境下，這段還成立嗎」。
+- Node.js + TypeScript 後端
+- pnpm workspace（monorepo）
+- Prisma + PostgreSQL
+- 前端獨立部署在其他平台（例如 Vercel）
 
 ---
 
-## 部署前的 Code Checklist（最容易省半天的部分）
+## 部署前的程式碼準備
 
-### 1. 所有相對 import 加 `.js` 副檔名
+### 1. 相對 import 必須加 `.js` 副檔名
 
-```ts
-// ❌ 本地能跑，production 炸
+~~~ts
+// 開發時可運行，production 失敗
 import { prisma } from "./db";
 
-// ✅ 兩邊都能跑
+// 兩種環境皆可
 import { prisma } from "./db.js";
-```
+~~~
 
-**規則**：
+規則：
+- 相對 import（`./` `../` 開頭）需加 `.js`
+- 第三方套件（`fastify`、`@prisma/client`）不需加
 
-- 相對 import（`./` `../` 開頭）→ 加 `.js`
-- 第三方套件（`fastify`、`@prisma/client`）→ 不加
+原因：TypeScript 編譯後產出 JS，Node ESM 嚴格模式要求 import 寫完整路徑含副檔名。即使原始檔為 `.ts`，編譯後執行的是 `.js`，import 路徑需寫 `.js`。
 
-**為什麼**：TS 編譯後是 JS，Node ESM 嚴格模式要求 import 寫完整路徑含副檔名。即使原始檔是 `.ts`，編譯後跑的是 `.js`，import 路徑要寫 `.js`。
+掃描需修改處：
 
-一鍵找出所有要改的地方：
-
-```bash
+~~~bash
 grep -rn 'from "\.\.\?/' src/
-```
+~~~
 
----
+### 2. Monorepo 內部套件需編譯出 `dist/`
 
-### 2. Monorepo 的內部套件必須能編譯出 `dist/`
+如果 monorepo 內有共用套件（例如 `packages/shared`），該套件必須有 build script 且 main 指向編譯後的 `.js`：
 
-最容易漏的雷。如果你 monorepo 裡有 `packages/shared` 這類共用套件，**它也必須有 build script、且 main 指向編譯後的 `.js`**：
-
-```json
-// packages/shared/package.json
+~~~json
 {
   "name": "@scope/shared",
   "type": "module",
-  "main": "./dist/index.js", // ← 指 dist 不是 src
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -73,14 +52,14 @@ grep -rn 'from "\.\.\?/' src/
     }
   },
   "scripts": {
-    "build": "tsc" // ← 必須有
+    "build": "tsc"
   }
 }
-```
+~~~
 
-tsconfig 也要設定真的 emit：
+tsconfig 需設定真實 emit：
 
-```json
+~~~json
 {
   "compilerOptions": {
     "outDir": "./dist",
@@ -88,298 +67,323 @@ tsconfig 也要設定真的 emit：
     "declaration": true,
     "module": "ESNext",
     "moduleResolution": "Bundler"
-    // 不能有 "noEmit": true
   },
   "include": ["src"]
 }
-```
+~~~
 
-**為什麼**：開發時 tsx/Vite 能讀 `.ts`，把 main 指 `.ts` 沒事；但 Railway 用純 Node 跑，import 拿到 `.ts` 路徑會炸 `ERR_UNKNOWN_FILE_EXTENSION`。
+不可設定 `"noEmit": true`。
 
----
+原因：開發時 tsx / Vite 能即時讀 `.ts`，main 指向 `.ts` 可運行；但純 Node 執行時 import 拿到 `.ts` 路徑會報 `ERR_UNKNOWN_FILE_EXTENSION`。
 
-### 3. 環境敏感的設定不要寫死
+### 3. 環境敏感的設定移除寫死值
 
-**(a) Redirect / CORS / API base URL**
+Redirect / CORS / API base URL：
 
-```ts
-// ❌
+~~~ts
+// 不可寫死
 return reply.redirect("http://localhost:5173/");
-origin: ["http://localhost:5173"];
+origin: ["http://localhost:5173"]
 
-// ✅
+// 改用環境變數
 const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 return reply.redirect(frontendUrl + "/");
 
 const allowedOrigins = process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL]
   : ["http://localhost:5173"];
-```
+~~~
 
-**(b) Cookie 屬性 — 跨網域 production 的關鍵**
+Cookie 屬性（跨網域 production 必要設定）：
 
-前端 Vercel、後端 Railway 是不同網域，cookie 必須：
-
-```ts
+~~~ts
 const isProd = process.env.NODE_ENV === "production";
 const cookieOptions = {
   httpOnly: true,
-  sameSite: isProd ? ("none" as const) : ("lax" as const), // 跨網域必須 "none"
-  secure: isProd, // sameSite none 強制 secure
+  sameSite: isProd ? "none" as const : "lax" as const,
+  secure: isProd,
   path: "/",
 };
-```
+~~~
 
-**漏這個的後果**：登入流程「看起來成功」但 `/api/me` 永遠 401，因為瀏覽器拒絕送 cookie。是隱藏最深的雷之一。
+若未設定，登入流程看似成功但 `/api/me` 永遠 401，因為瀏覽器拒絕送 cookie。
 
-**(c) `.env` 載入要避開 production**
+`.env` 載入應避開 production：
 
-```ts
-// 第一行
+~~~ts
 if (process.env.NODE_ENV !== "production") {
   await import("dotenv/config");
 }
-```
+~~~
 
-Production 由 Railway 注入環境變數，不該再去讀 `.env` 檔（沒這檔，會噴 warning 或潛在錯誤）。
+Production 環境變數由平台注入，無需讀取 `.env` 檔案。
 
----
+### 4. `package.json` 必要欄位
 
-### 4. `package.json` 該有的欄位
+Root `package.json`：
 
-**Root `package.json`**：
-
-```json
+~~~json
 {
-  "packageManager": "pnpm@9.12.0", // ← Railway 靠這個決定用哪個 pnpm
+  "packageManager": "pnpm@9.12.0",
   "engines": {
-    "node": ">=20.0.0" // ← 鎖定 Node 大版本，避免 prod 跑到太新版
+    "node": ">=20.0.0"
   }
 }
-```
+~~~
 
-**沒有 `packageManager`** → Railway 預設用 npm → 看到 `workspace:*` 就炸。
+無 `packageManager` 欄位時，Railway 預設使用 npm，遇到 `workspace:*` 語法會失敗。
 
-**App `package.json`**（例如 `apps/api`）：
+App `package.json`（例如 `apps/api`）：
 
-```json
+~~~json
 {
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js", // ← Start 指向編譯後的 JS
+    "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts"
   }
 }
-```
+~~~
 
 ---
 
-## Railway Service 設定 SOP
+## Railway Service 設定
 
 ### Project 結構
 
-一個 project 內放所有相關的 services（例如 api + Postgres）。**跨 project 的 service 無法用 `${{ServiceName.VAR}}` 引用環境變數**——這會大幅增加維護成本，別跨。
+一個 project 內放所有相關 services（例如 api + Postgres）。跨 project 的 service 無法使用 `${{ServiceName.VAR}}` 引用環境變數。
 
 ### Settings 設定
 
-| 欄位               | 值                                                          |
-| ------------------ | ----------------------------------------------------------- |
-| **Root Directory** | `/`（monorepo 留空或填根目錄，**不要**填 `apps/api`）       |
-| **Build Command**  | 見下面                                                      |
-| **Start Command**  | 見下面                                                      |
-| **Watch Paths**    | `apps/api/**` `packages/shared/**` `pnpm-lock.yaml`（可選） |
+| 欄位 | 值 |
+|---|---|
+| Root Directory | `/`（monorepo 留空或填根目錄，不填子目錄） |
+| Build Command | 見下方 |
+| Start Command | 見下方 |
+| Watch Paths | `apps/api/**` `packages/shared/**` `pnpm-lock.yaml`（選填） |
 
-**Build Command（monorepo + pnpm + Prisma 範例）**：
+Build Command（monorepo + pnpm + Prisma 範例）：
 
-```
+~~~
 corepack enable && pnpm install --frozen-lockfile && pnpm --filter @scope/shared build && pnpm --filter @scope/api exec prisma generate && pnpm --filter @scope/api build
-```
+~~~
 
-順序意義：
-
-1. `corepack enable` — 啟用 pnpm（靠 root `packageManager` 欄位決定版本）
-2. `pnpm install --frozen-lockfile` — 嚴格按 lockfile 安裝
-3. `pnpm --filter @scope/shared build` — 內部套件先 build（依賴順序）
+執行順序：
+1. `corepack enable` — 啟用 pnpm，依 root `packageManager` 欄位決定版本
+2. `pnpm install --frozen-lockfile` — 依 lockfile 安裝
+3. `pnpm --filter @scope/shared build` — 內部套件先 build
 4. `pnpm --filter @scope/api exec prisma generate` — 產生 Prisma Client
 5. `pnpm --filter @scope/api build` — 編譯 api
 
-**Start Command**：
+Start Command：
 
-```
+~~~
 pnpm --filter @scope/api exec prisma migrate deploy && pnpm --filter @scope/api start
-```
+~~~
 
-`prisma migrate deploy`（不是 `migrate dev`）才是 production 用的，不會問問題、不會產生新 migration。
+`prisma migrate deploy`（非 `migrate dev`）為 production 用，不會詢問互動或產生新 migration。
 
-### 關鍵語法：`pnpm exec` vs `pnpm`
+### `pnpm exec` 與 `pnpm` 差異
 
-```
-pnpm build         ← 跑 package.json 裡名為 "build" 的 script
-pnpm exec prisma   ← 直接執行 prisma 這個 CLI binary
-```
+~~~
+pnpm build         # 執行 package.json 中名為 "build" 的 script
+pnpm exec prisma   # 直接執行 prisma CLI binary
+~~~
 
-Prisma、ESLint、Vitest 這類 CLI 工具要用 `pnpm exec`。沒加 `exec` 會噴「None of the selected packages has a 'xxx' script」。
+Prisma、ESLint、Vitest 等 CLI 工具需使用 `pnpm exec`。未加 `exec` 會出現 "None of the selected packages has a 'xxx' script"。
 
 ---
 
-## 環境變數設定 SOP
+## 環境變數設定
 
-### Raw Editor 格式（Railway 介面）
+### Raw Editor 格式
 
-**值不要包引號**：
+值不可包引號：
 
-```
+~~~
 NODE_ENV=production                                              # ✅
 NODE_ENV="production"                                            # ❌ 值會變成含引號的 "production"
-```
+~~~
 
-**用 ${{ServiceName.VAR}} 引用同 project 的服務變數**：
+使用 `${{ServiceName.VAR}}` 引用同 project 的 service 變數：
 
-```
+~~~
 DATABASE_URL=${{Postgres.DATABASE_URL}}
-```
+~~~
 
-好處：Postgres 換密碼會自動同步，不用手動更新。
+好處：Postgres 變動密碼會自動同步，不需手動更新。
 
-### 部署前該設好的環境變數（典型 API server）
+### 典型 API server 環境變數
 
-```
+~~~
 NODE_ENV=production
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
-GOOGLE_REDIRECT_URI=https://你的railway網址/api/auth/google/callback
-FRONTEND_URL=https://你的vercel網址
-```
+GOOGLE_REDIRECT_URI=https://<railway網址>/api/auth/google/callback
+FRONTEND_URL=https://<vercel網址>
+~~~
 
-### 「雞生蛋」問題：URL 還沒生成怎麼設
+### URL 雞生蛋問題
 
-Railway domain 要部署觸發後才產生，但 OAuth redirect URI 需要這個 URL → 死循環。
+Railway domain 在部署觸發後才產生，但 OAuth redirect URI 需要此 URL。
 
-**解法**：先填 placeholder，跑一次部署（會失敗或部分成功）後 domain 就生出來，再回頭改成真的。
+解法：先填 placeholder，跑一次部署後 domain 即可取得，再回頭更新為實際值。建議 placeholder 使用明顯會失敗的格式（例如 `TODO_REPLACE_ME`）而非看似合理的假網址，避免忘記更新。
 
-```
-GOOGLE_REDIRECT_URI=https://placeholder.up.railway.app/api/auth/google/callback
-```
+~~~
+GOOGLE_REDIRECT_URI=TODO_REPLACE_ME_BEFORE_GO_LIVE/api/auth/google/callback
+~~~
 
 ---
 
 ## 安全紀律
 
-### Secret 處理三條鐵則
+### Secret 處理
 
-1. **任何 secret 都不准 commit**（`.env`、API key、JWT secret、DB password）。確認 `.gitignore`：
+1. 任何 secret 不可 commit（`.env`、API key、JWT secret、DB password）。`.gitignore` 應包含：
 
-```
+   ~~~
    .env
    .env.*
    !.env.example
-```
+   ~~~
 
-2. **截圖前先把 secret 那行擋掉**（不只面試/履歷，貼到任何 chat/issue 前都要檢查）
-3. **一旦曾外洩，立刻 Reset/Revoke**——不管「應該沒被看到吧」。重新產生的成本永遠比被盜的成本低
+2. 截圖前檢查是否含 secret 行，需擋掉或塗黑
+3. 一旦曾外洩，立即 Reset / Revoke，重新產生
 
 ### `.env.example`
 
-Repo 裡放一份 `.env.example`，列出所有需要的環境變數但**值留空或寫範例**。新人 clone 下來照著建自己的 `.env`：
+Repo 內放置 `.env.example`，列出所有需要的環境變數但值留空：
 
-```
+~~~
 # .env.example
 DATABASE_URL="postgresql://user:pass@host:5432/db"
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-```
+~~~
 
 ---
 
-## 第三方服務的對應設定（容易漏）
+## 第三方服務白名單
 
-部署完後端後，**Google OAuth Console 也要更新**才能真的登入：
+後端部署完成後，需更新外部服務的設定：
 
-1. APIs & Services → Credentials → 你的 OAuth client
+1. APIs & Services → Credentials → 目標 OAuth client
 2. Authorized redirect URIs 加上 production 那組
-3. **保留 localhost 那組**（不然本地會掛）
-4. OAuth consent screen 的 Test users 必須含你要登入的帳號
+3. 保留 localhost 那組（本地仍需使用）
+4. OAuth consent screen 的 Test users 含測試帳號
 
-通用心法：**所有「外部服務的白名單」都要記得加 production 網址**——OAuth、CORS、Webhook、CDN、API 限制。
-
----
-
-## Debug 流程（卡關時的順序）
-
-1. **看 Build log** — 失敗在哪一步？最後一行錯誤是什麼？
-2. **看 Deploy log** — Build 成功但 start 失敗？通常是 ESM/環境變數/DB 連線
-3. **`/api/health` 測連線** — Server 起來但功能不對？先看健康檢查
-4. **瀏覽器開發者工具 → Network** — Status code、Cookie 是否帶上、Request headers
-5. **瀏覽器開發者工具 → Application → Cookies** — `secure`、`sameSite`、`httpOnly` 對不對
-
-### 常見錯誤訊息對照
-
-| 錯誤                                               | 原因                             | 修法                                           |
-| -------------------------------------------------- | -------------------------------- | ---------------------------------------------- |
-| `Unsupported URL Type "workspace:"`                | Railway 用 npm 跑 pnpm workspace | 加 `packageManager` 到 root `package.json`     |
-| `None of the selected packages has a "xxx" script` | 把 CLI 當 script 跑              | 加 `exec`：`pnpm --filter xxx exec yyy`        |
-| `Cannot find module '/app/.../dist/db'`            | ESM import 沒寫 `.js`            | 所有相對 import 加 `.js`                       |
-| `Unknown file extension ".ts"`                     | 內部 package 沒 build            | 該 package 加 `build` script、`main` 改指 dist |
-| `Can't reach database server`                      | DATABASE_URL 沒設或設錯          | 確認 `${{Postgres.DATABASE_URL}}` 引用正確     |
-| `redirect_uri_mismatch`                            | Google Console 沒加 prod URI     | 進 Credentials 加                              |
-| `CORS policy ... credentials`                      | CORS 沒開 credentials            | `cors({ origin: [...], credentials: true })`   |
-| `/api/me` 一直 401                                 | cookie 沒跨網域                  | `sameSite: "none"` + `secure: true`            |
+通用原則：所有「外部服務的白名單」都需要記得加 production 網址，包含 OAuth、CORS、Webhook、CDN、API 限制等。
 
 ---
 
-## 我的標準部署流程（Checklist）
+## 全端專案完整部署流程
 
-下次新專案要部署時照這個順序：
+「前端 + 獨立 API 後端」架構建議流程：
 
-### Phase 1：Code 整理（部署前）
+~~~
+Step 1: 程式碼改用環境變數（前端與後端皆需）
+Step 2: Railway 部署後端
+   ├─ 取得 Railway public domain
+   └─ Variables 暫填 placeholder，待 Vercel 部署完成再回來更新 FRONTEND_URL
+Step 3: Vercel 部署前端
+   ├─ VITE_API_BASE_URL 使用 Railway 實際網址
+   └─ 取得 Vercel domain
+Step 4: 回 Railway 更新 FRONTEND_URL 為 Vercel 實際網址
+Step 5: Google Console（或其他 OAuth provider）加入 production redirect URI
+Step 6: 等待 5〜30 分鐘讓 OAuth 設定生效
+Step 7: 無痕視窗測試完整流程
+Step 8: F12 → Cookies 驗證跨網域 cookie 屬性
+~~~
 
+各環境變數需對應一致：
+
+~~~
+Vercel: VITE_API_BASE_URL ─────── = Railway public domain
+Railway: GOOGLE_REDIRECT_URI ─── = Railway domain + /api/auth/google/callback
+Railway: FRONTEND_URL ─────────── = Vercel domain
+Google Console: Authorized URIs = Railway domain + /api/auth/google/callback
+~~~
+
+任何一處網址不一致，整條鏈路會中斷。Debug 時需追蹤完整鏈路，而非只檢查單一環節。
+
+前端詳細流程請參考 [Vercel 部署指南](./vercel-deploy-guide.md)。
+
+---
+
+## Debug 順序
+
+當部署遇到問題時，依此順序排查：
+
+1. Build log — 失敗在哪一步？最後一行錯誤是什麼？
+2. Deploy log — Build 成功但 start 失敗？多為 ESM / 環境變數 / DB 連線問題
+3. `/api/health` 測試連線 — Server 啟動但功能異常時先看健康檢查
+4. 瀏覽器 F12 → Network — Status code、Cookie 是否帶上、Request headers
+5. 瀏覽器 F12 → Application → Cookies — `secure`、`sameSite`、`httpOnly` 屬性
+
+### 常見錯誤對照
+
+| 錯誤訊息 | 原因 | 解法 |
+|---|---|---|
+| `Unsupported URL Type "workspace:"` | Railway 用 npm 跑 pnpm workspace | 加 `packageManager` 到 root `package.json` |
+| `None of the selected packages has a "xxx" script` | 把 CLI 當 script 跑 | 加 `exec`：`pnpm --filter xxx exec yyy` |
+| `Cannot find module '/app/.../dist/db'` | ESM import 沒寫 `.js` | 所有相對 import 加 `.js` |
+| `Unknown file extension ".ts"` | 內部 package 沒 build | 該 package 加 `build` script、`main` 改指 dist |
+| `Module '@prisma/client' has no exported member 'PrismaClient'` | Build command 中 `prisma generate` 未成功執行 | Build command 改為 `pnpm --filter xxx exec prisma generate` |
+| `Can't reach database server` | DATABASE_URL 未設定或錯誤 | 確認 `${{Postgres.DATABASE_URL}}` 引用正確 |
+| `redirect_uri_mismatch` | OAuth provider 白名單未含 prod URI | 加入 URI、等待 5〜30 分鐘生效 |
+| 跳轉到 `placeholder.up.railway.app` Not Found | Variables 仍為 placeholder 未更新 | 將 `GOOGLE_REDIRECT_URI` / `FRONTEND_URL` 更新為實際網址 |
+| `FRONTEND_URL` 有結尾斜線 | redirect 變成雙斜線，cookie 跨網域失敗 | 移除 `FRONTEND_URL` 結尾斜線 |
+| Railway domain "The train has not arrived" | 該網域未對應到任何 service | 確認 service 的 Public Domain 已 Generate、網址無 typo |
+| `CORS policy ... credentials` | CORS 沒開 credentials | `cors({ origin: [...], credentials: true })` |
+| `/api/me` 持續 401 | cookie 跨網域未生效 | `sameSite: "none"` + `secure: true` |
+
+---
+
+## 部署 Checklist
+
+### Phase 1：程式碼準備
 - [ ] 所有相對 import 加 `.js`
 - [ ] 內部 package 有 build script，`main` 指 `dist/index.js`
 - [ ] redirect / CORS / cookie 改用 env 變數，無寫死的 localhost
-- [ ] Cookie 屬性根據 `NODE_ENV` 切換 sameSite/secure
+- [ ] Cookie 屬性根據 `NODE_ENV` 切換 sameSite / secure
 - [ ] `dotenv/config` 只在 dev 載入
-- [ ] Root `package.json` 有 `packageManager` 欄位
+- [ ] Root `package.json` 含 `packageManager` 欄位
 - [ ] App `package.json` 的 `start` 指向 `node dist/index.js`
 - [ ] `.env.example` 建好、`.env` 在 gitignore
 
 ### Phase 2：Railway Project 設定
-
-- [ ] 建 Project，加 Postgres service
-- [ ] 從 GitHub 加 API service（不要分 project）
-- [ ] Settings：Root Directory 留空、Build/Start Command 用 `pnpm --filter ... exec ...` 格式
+- [ ] 建立 Project，加 Postgres service
+- [ ] 從 GitHub 加 API service（與 Postgres 同 project）
+- [ ] Settings：Root Directory 留空、Build / Start Command 使用 `pnpm --filter ... exec ...` 格式
 - [ ] Variables：用 `${{Postgres.DATABASE_URL}}` 引用、placeholder 處理 URL 循環依賴
 - [ ] Generate Domain
 
 ### Phase 3：外部服務白名單
-
-- [ ] Google OAuth：加 production redirect URI（**保留 localhost**）
-- [ ] OAuth Test users（如果還在測試階段）
+- [ ] Google OAuth：加 production redirect URI（保留 localhost）
+- [ ] OAuth Test users（仍在測試階段時）
 - [ ] 其他用到的服務（Stripe webhook、API 白名單等）
 
 ### Phase 4：驗證
-
 - [ ] `/api/health` 回 JSON 含 `db: connected`
-- [ ] 從前端走一次登入流程
+- [ ] 前端走完整登入流程
 - [ ] 瀏覽器 cookie 設定正確（secure、sameSite）
-- [ ] 登出能清掉 cookie
+- [ ] 登出可清除 cookie
 
 ---
 
-## 對前端工程師的補充建議
+## 心智準備：本地能跑 ≠ 線上能跑
 
-1. **第一個專案部署別追求一次到位**。預期會反覆 push、看 log、改、再 push 5〜10 次，這是正常的學習成本，不是你的問題
-2. **每個 sprint 結束都更新 production**，別把所有功能做完才一次部，累積的 prod-only bug 會難 debug 到崩潰
-3. **本地 Docker + 雲端 Postgres 是業界標準**，不要在雲端 DB 上開發（亂搞風險、網路延遲、吃免費額度）
-4. **`pnpm exec` 跟 `pnpm` 的差別**請特別記住，這個雷你會在 CI/CD 場景反覆遇到
-5. **Lockfile（`pnpm-lock.yaml`）一定要 commit**。`--frozen-lockfile` 鎖的就是這個
+以下設計在開發時不會出事，部署到 Railway 時會出問題：
 
----
+| 本地能跑的原因 | 上線會失敗的原因 |
+|---|---|
+| `tsx` / Vite 即時編譯 `.ts` | Production 使用純 Node 跑 JS，不認識 `.ts` |
+| monorepo 內部套件 `main` 指 `.ts` | 純 Node 載入時找不到 `.js` |
+| ESM import 未寫 `.js` 副檔名 | 編譯後執行時找不到模組 |
+| `localhost:5173` / `localhost:3000` 寫死 | Production 是不同網域，cookie / CORS 失效 |
+| `sameSite: lax` | 跨網域 cookie 需要 `sameSite: none` + `secure: true` |
+| `.env` 本地自動讀取 | Production 由平台注入，多讀一次反而出問題 |
 
-## 為什麼這份知識值錢
-
-日本企業面試常問「これは本番で動いていますか？」（這個有跑在 production 嗎）。  
-能回答「有，部署在 Railway，前端在 Vercel」是基本門檻；  
-能多講「monorepo 部署踩過 X、Y、Z 這幾個雷，我這樣解決」就是加分項。  
-這份指南整理的內容剛好是面試聊「部署經驗」的具體素材。
+撰寫每段 code 時需確認：production 環境下此段是否成立。
