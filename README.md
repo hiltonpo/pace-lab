@@ -92,6 +92,7 @@ cd ../.. && pnpm dev
 
 ## Documentation
 
+- [Project Structure](./docs/project-structure.md) — 目錄結構與檔案職責
 - [Railway Deployment Guide](./docs/railway-deploy-guide.md) — pnpm monorepo + Prisma 部署到 Railway 的流程與問題處理
 - [Vercel Deployment Guide](./docs/vercel-deploy-guide.md) — Vite 部署到 Vercel、跨網域 cookie、OAuth 整合
 - [UI Foundation Notes](./docs/ui-foundation-notes.md)
