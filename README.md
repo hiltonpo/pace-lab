@@ -20,9 +20,11 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 ## Tech Stack
 
 ### Frontend
-
 - React 18 + TypeScript + Vite
-- TanStack Query for server state
+- TanStack Query (server state)
+- **Tailwind CSS v4 + shadcn/ui** (Radix-based)
+- **react-i18next** (Japanese / Traditional Chinese / English)
+- **Dark mode** (system preference + manual toggle)
 - Deployed on Vercel
 
 ### Backend
@@ -92,6 +94,7 @@ cd ../.. && pnpm dev
 
 - [Railway Deployment Guide](./docs/railway-deploy-guide.md) — pnpm monorepo + Prisma 部署到 Railway 的流程與問題處理
 - [Vercel Deployment Guide](./docs/vercel-deploy-guide.md) — Vite 部署到 Vercel、跨網域 cookie、OAuth 整合
+- [UI Foundation Notes](./docs/ui-foundation-notes.md)
 
 ## Design Decisions
 
@@ -117,7 +120,7 @@ Lucia 於 2025 年 3 月棄用，作者建議直接實作 session 管理。Auth.
 ## Roadmap
 
 - [x] Sprint 1: Authentication & deployment infrastructure
-- [ ] Sprint 1.5: UI foundation (Tailwind, shadcn, dark mode, i18n setup)
+- [x] Sprint 1.5: UI foundation (Tailwind v4, shadcn, dark mode, i18n)
 - [ ] Sprint 2: Training plan generator (Jack Daniels VDOT formula)
 - [ ] Sprint 3: Workout logging + progress charts
 - [ ] Sprint 4: PWA support, offline-first

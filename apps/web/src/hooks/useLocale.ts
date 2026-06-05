@@ -8,10 +8,21 @@ const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
 };
 
+const SUPPORTED_LOCALES = Object.keys(LOCALE_LABELS) as Locale[];
+
+function normalizeLocale(raw: string | undefined): Locale {
+  // 取前兩個字（"zh-TW" → "zh"、"en-US" → "en"）
+  const short = (raw ?? "").slice(0, 2).toLowerCase();
+  if (SUPPORTED_LOCALES.includes(short as Locale)) {
+    return short as Locale;
+  }
+  return "ja"; // fallback
+}
+
 export function useLocale() {
   const { i18n } = useTranslation();
 
-  const locale = i18n.language as Locale;
+  const locale = normalizeLocale(i18n.language);
   const changeLocale = (newLocale: Locale) => {
     i18n.changeLanguage(newLocale);
   };
@@ -19,7 +30,7 @@ export function useLocale() {
   return {
     locale,
     changeLocale,
-    available: Object.keys(LOCALE_LABELS) as Locale[],
+    available: SUPPORTED_LOCALES,
     labels: LOCALE_LABELS,
   };
 }
