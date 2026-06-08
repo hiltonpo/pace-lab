@@ -5,3 +5,10 @@ export const SHARED_VERSION = "0.0.1";
 export * from "./training/raceType.js";
 export * from "./training/vdot.js";
 export * from "./training/format.js";
+
+export * from "./training/generatePlan.js";
+export type {
+  WorkoutTemplate,
+  WeekTemplate,
+  PlanTemplate,
+} from "./training/templates/types.js";
