@@ -11,5 +11,35 @@
   },
   "common": {
     "loading": "読み込み中…"
+  },
+  "plans": {
+    "createNew": "新しい計画を作成",
+    "title": "新しい訓練計画",
+    "form": {
+      "name": "計画名",
+      "namePlaceholder": "例：3月のマラソン準備",
+      "raceType": "レース種類",
+      "goalTime": "目標タイム",
+      "goalTimeHint": "形式：H:MM:SS（例 3:59:00）",
+      "weeks": "訓練週数",
+      "submit": "計画を作成",
+      "submitting": "作成中…"
+    },
+    "raceTypes": {
+      "marathon": "フルマラソン",
+      "half_marathon": "ハーフマラソン",
+      "10k": "10K",
+      "5k": "5K"
+    },
+    "preview": {
+      "title": "VDOT プレビュー",
+      "vdot": "VDOT スコア",
+      "paces": "推奨ペース",
+      "easy": "Easy",
+      "marathon": "Marathon",
+      "threshold": "Threshold (Tempo)",
+      "interval": "Interval",
+      "repetition": "Repetition"
+    }
   }
 }

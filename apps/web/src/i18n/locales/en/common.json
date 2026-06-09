@@ -11,5 +11,35 @@
   },
   "common": {
     "loading": "Loading…"
+  },
+  "plans": {
+    "createNew": "Create New Plan",
+    "title": "New Training Plan",
+    "form": {
+      "name": "Plan Name",
+      "namePlaceholder": "e.g., March Marathon Prep",
+      "raceType": "Race Type",
+      "goalTime": "Goal Time",
+      "goalTimeHint": "Format: H:MM:SS (e.g., 3:59:00)",
+      "weeks": "Training Weeks",
+      "submit": "Create Plan",
+      "submitting": "Creating..."
+    },
+    "raceTypes": {
+      "marathon": "Marathon",
+      "half_marathon": "Half Marathon",
+      "10k": "10K",
+      "5k": "5K"
+    },
+    "preview": {
+      "title": "VDOT Preview",
+      "vdot": "VDOT Score",
+      "paces": "Recommended Paces",
+      "easy": "Easy",
+      "marathon": "Marathon",
+      "threshold": "Threshold (Tempo)",
+      "interval": "Interval",
+      "repetition": "Repetition"
+    }
   }
 }

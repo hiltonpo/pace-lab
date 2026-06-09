@@ -11,5 +11,35 @@
   },
   "common": {
     "loading": "載入中…"
+  },
+  "plans": {
+    "createNew": "建立新計畫",
+    "title": "新訓練計畫",
+    "form": {
+      "name": "計畫名稱",
+      "namePlaceholder": "例：3 月馬拉松準備",
+      "raceType": "比賽類型",
+      "goalTime": "目標時間",
+      "goalTimeHint": "格式：H:MM:SS（例 3:59:00）",
+      "weeks": "訓練週數",
+      "submit": "建立計畫",
+      "submitting": "建立中…"
+    },
+    "raceTypes": {
+      "marathon": "全馬",
+      "half_marathon": "半馬",
+      "10k": "10K",
+      "5k": "5K"
+    },
+    "preview": {
+      "title": "VDOT 預覽",
+      "vdot": "VDOT 分數",
+      "paces": "建議配速",
+      "easy": "Easy",
+      "marathon": "Marathon",
+      "threshold": "Threshold (Tempo)",
+      "interval": "Interval",
+      "repetition": "Repetition"
+    }
   }
 }
