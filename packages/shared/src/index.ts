@@ -12,3 +12,4 @@ export type {
   WeekTemplate,
   PlanTemplate,
 } from "./training/templates/types.js";
+export * from "./training/planSchemas.js";

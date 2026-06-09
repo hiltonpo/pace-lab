@@ -7,6 +7,7 @@ import cors from "@fastify/cors";
 import { SHARED_VERSION } from "@pace-lab/shared";
 import cookie from "@fastify/cookie";
 import { authRoutes } from "./routes/auth.js";
+import { plansRoutes } from "./routes/plans.js";
 
 const app = Fastify({
   logger: {
@@ -28,6 +29,7 @@ await app.register(cors, {
 
 await app.register(cookie);
 await app.register(authRoutes);
+await app.register(plansRoutes);
 
 app.get("/api/health", async () => {
   await prisma.$queryRaw`SELECT 1`;
