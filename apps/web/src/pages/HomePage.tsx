@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useMe, useLogout } from "../hooks/useMe";
+import { usePlans } from "../hooks/usePlans";
+import { formatDuration } from "@pace-lab/shared";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,12 +14,13 @@ import {
 
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
-export function HomePage() {
+export const HomePage = () => {
   const { t } = useTranslation();
-  const { data: user, isLoading } = useMe();
+  const { data: user, isLoading: userLoading } = useMe();
   const logout = useLogout();
+  const { data: plans, isLoading: plansLoading } = usePlans();
 
-  if (isLoading) {
+  if (userLoading) {
     return <p className="text-muted-foreground">{t("common.loading")}</p>;
   }
 
@@ -42,7 +45,8 @@ export function HomePage() {
 
   // 已登入
   return (
-    <div className="space-y-6 max-w-md mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto">
+      {/* 使用者卡片 */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">
@@ -63,6 +67,53 @@ export function HomePage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* 計畫列表 */}
+      <div className="space-y-3">
+        <h2 className="text-xl font-semibold tracking-tight">
+          {t("plans.myPlans")}
+        </h2>
+
+        {plansLoading && (
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        )}
+
+        {!plansLoading && plans && plans.length === 0 && (
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground mb-2">{t("plans.noPlans")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("plans.noPlansHint")}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!plansLoading && plans && plans.length > 0 && (
+          <div className="grid gap-3">
+            {plans.map((plan) => (
+              <Link key={plan.id} to={`/plans/${plan.id}`}>
+                <Card className="hover:border-ring transition-colors cursor-pointer">
+                  <CardContent className="pt-6 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="font-medium">{plan.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t(`plans.raceTypes.${plan.goalRaceType}`)} ·{" "}
+                        {formatDuration(plan.goalTimeSec)} · {plan.weeksTotal}{" "}
+                        weeks
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-semibold">{plan.vdot}</p>
+                      <p className="text-xs text-muted-foreground">VDOT</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};

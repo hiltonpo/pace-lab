@@ -35,11 +35,50 @@
       "title": "VDOT 預覽",
       "vdot": "VDOT 分數",
       "paces": "建議配速",
+      "easy": "Easy ({{n}})",
+      "marathon": "Marathon ({{n}})",
+      "threshold": "Threshold (Tempo, {{n}})",
+      "interval": "Interval ({{n}})",
+      "repetition": "Repetition ({{n}})"
+    },
+    "myPlans": "我的計畫",
+    "noPlans": "目前還沒有計畫",
+    "noPlansHint": "從「建立新計畫」開始",
+    "viewDetail": "查看詳情",
+    "delete": "刪除",
+    "deleteConfirm": "確定要刪除這個計畫嗎？",
+    "deleteConfirmYes": "確認刪除",
+    "deleteCancel": "取消",
+    "detail": {
+      "summary": "計畫概覽",
+      "status": "狀態",
+      "createdAt": "建立日期",
+      "weeks": "週數",
+      "vdot": "VDOT",
+      "goalTime": "目標時間",
+      "paces": "建議配速",
+      "schedule": "訓練排程",
+      "week": "第 {{n}} 週",
+      "totalKm": "週里程",
+      "totalWeeks": "共 {{n}} 週"
+    },
+    "workout": {
+      "rest": "休息",
       "easy": "Easy",
-      "marathon": "Marathon",
-      "threshold": "Threshold (Tempo)",
+      "long": "Long",
+      "tempo": "Tempo",
+      "marathon": "Marathon Pace",
       "interval": "Interval",
-      "repetition": "Repetition"
+      "race": "比賽日"
+    },
+    "days": {
+      "sun": "日",
+      "mon": "一",
+      "tue": "二",
+      "wed": "三",
+      "thu": "四",
+      "fri": "五",
+      "sat": "六"
     }
   }
 }

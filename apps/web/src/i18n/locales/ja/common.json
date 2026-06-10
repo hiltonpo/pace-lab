@@ -35,11 +35,50 @@
       "title": "VDOT プレビュー",
       "vdot": "VDOT スコア",
       "paces": "推奨ペース",
+      "easy": "Easy ({{n}})",
+      "marathon": "Marathon ({{n}})",
+      "threshold": "Threshold (Tempo, {{n}})",
+      "interval": "Interval ({{n}})",
+      "repetition": "Repetition ({{n}})"
+    },
+    "myPlans": "私の計画",
+    "noPlans": "まだ計画がありません",
+    "noPlansHint": "「新しい計画を作成」から始めましょう",
+    "viewDetail": "詳細を見る",
+    "delete": "削除",
+    "deleteConfirm": "本当にこの計画を削除しますか？",
+    "deleteConfirmYes": "はい、削除する",
+    "deleteCancel": "キャンセル",
+    "detail": {
+      "summary": "計画概要",
+      "status": "ステータス",
+      "createdAt": "作成日",
+      "weeks": "週数",
+      "vdot": "VDOT",
+      "goalTime": "目標タイム",
+      "paces": "推奨ペース",
+      "schedule": "訓練スケジュール",
+      "week": "Week {{n}}",
+      "totalKm": "週間距離",
+      "totalWeeks": "全 {{n}} 週"
+    },
+    "workout": {
+      "rest": "休息",
       "easy": "Easy",
-      "marathon": "Marathon",
-      "threshold": "Threshold (Tempo)",
+      "long": "Long",
+      "tempo": "Tempo",
+      "marathon": "Marathon Pace",
       "interval": "Interval",
-      "repetition": "Repetition"
+      "race": "Race Day"
+    },
+    "days": {
+      "sun": "日",
+      "mon": "月",
+      "tue": "火",
+      "wed": "水",
+      "thu": "木",
+      "fri": "金",
+      "sat": "土"
     }
   }
 }

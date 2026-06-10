@@ -29,7 +29,7 @@ import {
 const RACE_TYPES: RaceType[] = ["marathon", "half_marathon", "10k", "5k"];
 const WEEKS_OPTIONS = [8, 12, 16] as const;
 
-export function CreatePlanPage() {
+export const CreatePlanPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -250,4 +250,4 @@ export function CreatePlanPage() {
       </form>
     </div>
   );
-}
+};

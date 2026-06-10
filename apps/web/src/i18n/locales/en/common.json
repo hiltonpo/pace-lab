@@ -35,11 +35,50 @@
       "title": "VDOT Preview",
       "vdot": "VDOT Score",
       "paces": "Recommended Paces",
+      "easy": "Easy ({{n}})",
+      "marathon": "Marathon ({{n}})",
+      "threshold": "Threshold (Tempo, {{n}})",
+      "interval": "Interval ({{n}})",
+      "repetition": "Repetition ({{n}})"
+    },
+    "myPlans": "My Plans",
+    "noPlans": "No plans yet",
+    "noPlansHint": "Start by creating your first plan",
+    "viewDetail": "View Detail",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this plan?",
+    "deleteConfirmYes": "Yes, delete",
+    "deleteCancel": "Cancel",
+    "detail": {
+      "summary": "Summary",
+      "status": "Status",
+      "createdAt": "Created",
+      "weeks": "Weeks",
+      "vdot": "VDOT",
+      "goalTime": "Goal Time",
+      "paces": "Recommended Paces",
+      "schedule": "Training Schedule",
+      "week": "Week {{n}}",
+      "totalKm": "Weekly Total",
+      "totalWeeks": "{{n}} weeks total"
+    },
+    "workout": {
+      "rest": "Rest",
       "easy": "Easy",
-      "marathon": "Marathon",
-      "threshold": "Threshold (Tempo)",
+      "long": "Long",
+      "tempo": "Tempo",
+      "marathon": "Marathon Pace",
       "interval": "Interval",
-      "repetition": "Repetition"
+      "race": "Race Day"
+    },
+    "days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
     }
   }
 }
