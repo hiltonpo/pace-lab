@@ -13,6 +13,7 @@
     "loading": "載入中…"
   },
   "plans": {
+    "planNotFound":"找不到相關計畫，請重新確認",
     "createNew": "建立新計畫",
     "title": "新訓練計畫",
     "form": {

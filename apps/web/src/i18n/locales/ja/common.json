@@ -13,6 +13,7 @@
     "loading": "読み込み中…"
   },
   "plans": {
+    "planNotFound":"計画は見つかりません。再確認してください",
     "createNew": "新しい計画を作成",
     "title": "新しい訓練計画",
     "form": {

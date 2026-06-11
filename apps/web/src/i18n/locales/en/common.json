@@ -13,6 +13,7 @@
     "loading": "Loading…"
   },
   "plans": {
+    "planNotFound":"Plan not found, please check again",
     "createNew": "Create New Plan",
     "title": "New Training Plan",
     "form": {

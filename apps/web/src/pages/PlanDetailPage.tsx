@@ -37,7 +37,9 @@ export const PlanDetailPage = () => {
     return (
       <Card>
         <CardContent className="pt-6 text-center">
-          <p className="text-destructive">Plan not found</p>
+          <p className="text-destructive text-sm lg:text-lg">
+            {t("plans.planNotFound")}
+          </p>
           <Button
             variant="outline"
             onClick={() => navigate("/")}
