@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PACE_SHORT_LABELS } from "@pace-lab/shared";
 
 const RACE_TYPES: RaceType[] = ["marathon", "half_marathon", "10k", "5k"];
 const WEEKS_OPTIONS = [8, 12, 16] as const;
@@ -217,7 +218,9 @@ export const CreatePlanPage = () => {
                   ).map((paceType) => (
                     <div key={paceType} className="space-y-1">
                       <p className="text-muted-foreground">
-                        {t(`plans.preview.${paceType}`)}
+                        {t(`plans.preview.${paceType}`, {
+                          n: PACE_SHORT_LABELS[paceType],
+                        })}
                       </p>
                       <p className="font-medium tabular-nums">
                         {formatPace(preview!.paces[paceType])}

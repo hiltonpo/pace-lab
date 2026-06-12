@@ -10,15 +10,10 @@ import {
 import { usePlanDetail, useDeletePlan } from "../hooks/usePlans";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PACE_SHORT_LABELS } from "@pace-lab/shared";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-const PACE_SHORT_LABELS: Record<string, string> = {
-  easy: "E",
-  marathon: "M",
-  threshold: "T",
-  interval: "I",
-  repetition: "R",
-};
+
 
 export const PlanDetailPage = () => {
   const { t } = useTranslation();

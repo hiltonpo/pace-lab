@@ -51,7 +51,16 @@ export type PaceType =
   | "threshold" // T 配速（Tempo）
   | "interval" // I 配速
   | "repetition"; // R 配速
-
+/**
+ * 五種訓練配速的 Jack Daniels 標準縮寫。
+ */
+export const PACE_SHORT_LABELS: Record<PaceType, string> = {
+  easy: "E",
+  marathon: "M",
+  threshold: "T",
+  interval: "I",
+  repetition: "R",
+};
 /**
  * 各訓練配速對應的 VDOT %強度。
  * 數值是 Jack Daniels 表的近似中間值。
