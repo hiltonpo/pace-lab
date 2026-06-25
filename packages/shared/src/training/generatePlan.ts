@@ -25,7 +25,20 @@ export type GeneratedWorkout = {
   targetPaceSec: number | null; // 秒/km
   targetDistanceKm: number | null;
   targetDurationSec: number | null;
+  warmupKm: number | null;
+  cooldownKm: number | null;
+  intervals: IntervalStructure | null;
   notes: string | null;
+};
+
+/**
+ * Interval workout 的結構化資料。
+ */
+export type IntervalStructure = {
+  sets: number; // 趟數
+  setDistanceMeters: number; // 每趟距離（公尺）
+  recoveryDurationSec: number; // 趟間恢復秒數
+  recoveryType: "easy" | "rest"; // 恢復方式
 };
 
 /**
@@ -39,7 +52,10 @@ export type GeneratedPlan = {
 /**
  * 根據比賽類型 + 週數查找對應模板。
  */
-const getTemplate = (raceType: RaceType, weeksTotal: WeeksTotal): PlanTemplate => {
+const getTemplate = (
+  raceType: RaceType,
+  weeksTotal: WeeksTotal
+): PlanTemplate => {
   if (raceType === "marathon") {
     if (weeksTotal === 8) return MARATHON_8_WEEKS;
     if (weeksTotal === 12) return MARATHON_12_WEEKS;
@@ -49,7 +65,7 @@ const getTemplate = (raceType: RaceType, weeksTotal: WeeksTotal): PlanTemplate =
   throw new Error(
     `No template available for raceType=${raceType}, weeksTotal=${weeksTotal}`
   );
-}
+};
 
 /**
  * 把單一 WorkoutTemplate（純結構）轉換成 GeneratedWorkout（含配速）。
@@ -68,7 +84,11 @@ const expandWorkout = (
       targetPaceSec: null,
       targetDistanceKm: null,
       targetDurationSec: null,
-      notes: null,
+      warmupKm: null,
+      cooldownKm: null,
+      intervals: null,
+      notes:
+        "主動恢復：15-20 分鐘動態伸展、yoga 或滾筒按摩。心肺不受負荷即可。",
     };
   }
 
@@ -80,11 +100,16 @@ const expandWorkout = (
       targetPaceSec: null,
       targetDistanceKm: null,
       targetDurationSec: null,
+      warmupKm: null,
+      cooldownKm: null,
+      intervals: null,
       notes: "Race day! 比賽配速跑、依當天狀況微調。",
     };
   }
 
-  // 其他類型：套用配速
+  // 其他類型質量課表：套用配速
+  const isQuality = ["tempo", "marathon", "interval"].includes(template.type);
+
   return {
     weekNumber,
     dayOfWeek,
@@ -92,8 +117,47 @@ const expandWorkout = (
     targetPaceSec: paces[template.paceType],
     targetDistanceKm: template.distanceKm,
     targetDurationSec: null,
-    notes: null,
+    // quality workouts 才有 warmup / cooldown
+    warmupKm: isQuality ? 2 : null,
+    cooldownKm: isQuality ? 2 : null,
+    // 只有 interval 有結構
+    intervals:
+      template.type === "interval"
+        ? buildIntervalStructure(template.distanceKm)
+        : null,
+    notes: buildNotes(template.type),
   };
+};
+
+/**
+ * 根據 interval workout 的目標距離，產生趟數結構。
+ * 簡化邏輯：用 1km 一趟、湊到目標距離。
+ */
+function buildIntervalStructure(distanceKm: number): IntervalStructure {
+  return {
+    sets: Math.round(distanceKm), // 例如 8km → 8 趟
+    setDistanceMeters: 1000, // 每趟 1km
+    recoveryDurationSec: 180, // 趟間慢跑 3 分鐘
+    recoveryType: "easy",
+  };
+}
+
+/**
+ * 根據 workout type 產生訓練提醒文字。
+ */
+function buildNotes(workoutType: string): string | null {
+  switch (workoutType) {
+    case "tempo":
+      return "連續跑、不停。維持「舒服的吃力」強度，能在比賽撐 1 小時的配速。";
+    case "marathon":
+      return "用比賽配速持續跑，模擬實際比賽節奏。";
+    case "interval":
+      return "主段為間歇，每趟之間慢跑恢復。前後加 warm-up / cool-down。";
+    case "easy":
+    case "long":
+    default:
+      return null;
+  }
 }
 
 /**

@@ -184,3 +184,56 @@ describe("generatePlan - 錯誤處理", () => {
     expect(() => generatePlan("half_marathon", 6000, 12)).toThrow();
   });
 });
+
+describe("generatePlan - 訓練細節結構（Sprint 3）", () => {
+  test("Interval workout 有結構化的 intervals", () => {
+    const plan = generatePlan("marathon", SUB_4_MARATHON_SEC, 16);
+    const interval = plan.workouts.find((w) => w.workoutType === "interval");
+
+    expect(interval).toBeDefined();
+    expect(interval!.intervals).not.toBeNull();
+    expect(interval!.intervals!.sets).toBeGreaterThan(0);
+    expect(interval!.intervals!.setDistanceMeters).toBe(1000);
+    expect(interval!.intervals!.recoveryDurationSec).toBeGreaterThan(0);
+  });
+
+  test("Quality workouts 有 warm-up / cool-down", () => {
+    const plan = generatePlan("marathon", SUB_4_MARATHON_SEC, 16);
+    const qualityTypes = ["tempo", "marathon", "interval"];
+
+    plan.workouts
+      .filter((w) => qualityTypes.includes(w.workoutType))
+      .forEach((w) => {
+        expect(w.warmupKm).not.toBeNull();
+        expect(w.cooldownKm).not.toBeNull();
+      });
+  });
+
+  test("Easy / Long workouts 不需要 warm-up / cool-down", () => {
+    const plan = generatePlan("marathon", SUB_4_MARATHON_SEC, 16);
+
+    plan.workouts
+      .filter((w) => ["easy", "long"].includes(w.workoutType))
+      .forEach((w) => {
+        expect(w.warmupKm).toBeNull();
+        expect(w.cooldownKm).toBeNull();
+      });
+  });
+
+  test("Tempo workout 的 notes 提到連續跑", () => {
+    const plan = generatePlan("marathon", SUB_4_MARATHON_SEC, 16);
+    const tempo = plan.workouts.find((w) => w.workoutType === "tempo");
+
+    expect(tempo!.notes).toContain("連續");
+  });
+
+  test("只有 interval 有 intervals 結構，其他都 null", () => {
+    const plan = generatePlan("marathon", SUB_4_MARATHON_SEC, 16);
+
+    plan.workouts
+      .filter((w) => w.workoutType !== "interval")
+      .forEach((w) => {
+        expect(w.intervals).toBeNull();
+      });
+  });
+});
