@@ -14,6 +14,7 @@ export function App() {
           <Route path="/plans/new" element={<CreatePlanPage />} />
           <Route path="/plans/:id" element={<PlanDetailPage />} />
           <Route path="/workouts/new" element={<CreateWorkoutPage />} />
+          <Route path="/workouts/:id/edit" element={<CreateWorkoutPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

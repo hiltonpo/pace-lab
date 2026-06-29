@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PACE_SHORT_LABELS } from "@pace-lab/shared";
 import { useWorkouts } from "../hooks/useWorkouts";
+import { PlusCircle, PencilLineIcon } from "lucide-react";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -353,6 +354,14 @@ const WorkoutCell = ({
               {formatPace(actual.actualPaceSec)}
             </p>
           )}
+          {/* ← 編輯連結 */}
+          <Link
+            to={`/workouts/${actual.id}/edit`}
+            className="flex items-center justify-center gap-0.5 mt-1 rounded border border-muted-foreground/30 dark:border-muted-foreground/40 text-muted-foreground px-1.5 py-0.5 text-[9px] hover:border-primary/50 hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+          >
+            <PencilLineIcon className="w-2.5 h-2.5" />
+            {t("common.edit")}
+          </Link>
         </div>
       )}
 
@@ -360,8 +369,9 @@ const WorkoutCell = ({
       {!isCompleted && isLoggable && (
         <Link
           to={`/workouts/new?plannedId=${workout.id}&planId=${planId}`}
-          className="block mt-1 text-center rounded border border-primary/40 dark:border-primary/60 text-primary dark:text-primary py-0.5 text-[10px] font-medium hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+          className="flex items-center justify-center gap-1 mt-1 rounded border border-primary/40 dark:border-primary/60 text-primary dark:text-primary py-0.5 text-[10px] font-medium hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
         >
+          <PlusCircle className="w-3 h-3" />
           {t("plans.detail.logWorkout")}
         </Link>
       )}

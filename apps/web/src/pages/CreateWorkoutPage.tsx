@@ -1,18 +1,23 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createWorkoutInputSchema,
   parseDuration,
+  formatDuration,
   formatPace,
   WEATHER_OPTIONS,
   FEELING_OPTIONS,
   type CreateWorkoutInput,
 } from "@pace-lab/shared";
 
-import { useCreateWorkout } from "../hooks/useWorkouts";
+import {
+  useCreateWorkout,
+  useUpdateWorkout,
+  useWorkout,
+} from "../hooks/useWorkouts";
 import { usePlanDetail } from "../hooks/usePlans";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +28,13 @@ export function CreateWorkoutPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { id: editId } = useParams<{ id: string }>();
+
+  const isEditMode = !!editId; // 有id = 編輯模式
+
+  // 編輯模式：抓既有紀錄
+  const { data: existingWorkout } = useWorkout(editId);
+
   const WEATHER_ICONS: Record<string, string> = {
     sunny: "☀️",
     cloudy: "☁️",
@@ -66,6 +78,7 @@ export function CreateWorkoutPage() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<CreateWorkoutInput>({
     resolver: zodResolver(createWorkoutInputSchema),
@@ -78,6 +91,29 @@ export function CreateWorkoutPage() {
       actualDurationSec: 0,
     },
   });
+
+  // 編輯模式： 資料抓到後，填回表單
+  useEffect(() => {
+    if (existingWorkout) {
+      reset({
+        plannedWorkoutId: existingWorkout.plannedWorkoutId,
+        planId: existingWorkout.planId,
+        date: existingWorkout.date,
+        workoutType: existingWorkout.workoutType,
+        actualDistanceKm: existingWorkout.actualDistanceKm,
+        actualDurationSec: existingWorkout.actualDurationSec,
+        avgHeartRate: existingWorkout.avgHeartRate,
+        maxHeartRate: existingWorkout.maxHeartRate,
+        rpe: existingWorkout.rpe,
+        weather: existingWorkout.weather as any,
+        temperatureC: existingWorkout.temperatureC,
+        feeling: existingWorkout.feeling as any,
+        notes: existingWorkout.notes,
+      });
+      // 時間字串也要填回
+      setDurationStr(formatDuration(existingWorkout.actualDurationSec));
+    }
+  }, [existingWorkout, reset]);
 
   const watchedDistance = watch("actualDistanceKm");
   const watchedDuration = watch("actualDurationSec");
@@ -112,15 +148,27 @@ export function CreateWorkoutPage() {
     }
   };
 
-  const mutation = useCreateWorkout();
+  const createMutation = useCreateWorkout();
+  const updateMutation = useUpdateWorkout();
+  const mutation = isEditMode ? updateMutation : createMutation;
 
   const onSubmit = (data: CreateWorkoutInput) => {
-    mutation.mutate(data, {
-      onSuccess: () => {
-        // 記錄完回到計畫詳情（如果從計畫來）或首頁
-        navigate(planId ? `/plans/${planId}` : "/");
-      },
-    });
+    if (isEditMode && editId) {
+      updateMutation.mutate(
+        { id: editId, input: data },
+        {
+          onSuccess: () => {
+            navigate(data.planId ? `/plans/${data.planId}` : "/");
+          },
+        }
+      );
+    } else {
+      createMutation.mutate(data, {
+        onSuccess: () => {
+          navigate(planId ? `/plans/${planId}` : "/");
+        },
+      });
+    }
   };
 
   return (
@@ -334,10 +382,10 @@ export function CreateWorkoutPage() {
               />
             </div>
             {errors.temperatureC && (
-                <p className="text-sm text-destructive">
-                  {errors.temperatureC.message}
-                </p>
-              )}
+              <p className="text-sm text-destructive">
+                {errors.temperatureC.message}
+              </p>
+            )}
           </CardContent>
         </Card>
 

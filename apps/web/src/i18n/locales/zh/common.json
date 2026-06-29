@@ -11,7 +11,8 @@
   },
   "common": {
     "loading": "載入中…",
-    "cancel": "取消"
+    "cancel": "取消",
+    "edit": "編輯"
   },
   "plans": {
     "planNotFound": "找不到相關計畫，請重新確認",
@@ -94,6 +95,7 @@
   },
   "workout": {
     "title": "記錄訓練",
+    "editTitle": "編輯訓練紀錄",
     "target": "目標",
     "form": {
       "distance": "距離 (km)",

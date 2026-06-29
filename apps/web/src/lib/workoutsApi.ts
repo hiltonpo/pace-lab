@@ -57,3 +57,36 @@ export async function deleteWorkout(id: string): Promise<void> {
   });
   if (!res.ok) throw new Error("Failed to delete workout");
 }
+
+/**
+ * 取得單一訓練紀錄
+ */
+export async function getWorkout(id: string): Promise<ActualWorkoutResponse> {
+  const res = await fetch(`${apiBase}/api/workouts/${id}`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch workout");
+  return res.json();
+}
+
+/**
+ * 更新訓練紀錄（部分更新 PATCH）
+ */
+export async function updateWorkout(
+  id: string,
+  input: Partial<CreateWorkoutInput>
+): Promise<ActualWorkoutResponse> {
+  const res = await fetch(`${apiBase}/api/workouts/${id}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || "Failed to update workout");
+  }
+
+  return res.json();
+}

@@ -11,7 +11,8 @@
   },
   "common": {
     "loading": "Loading…",
-    "cancel": "cancel"
+    "cancel": "cancel",
+    "edit": "edit"
   },
   "plans": {
     "planNotFound": "Plan not found, please check again",
@@ -92,6 +93,7 @@
   },
   "workout": {
     "title": "Log Workout",
+    "editTitle": "Edit Workout",
     "target": "Target",
     "form": {
       "distance": "Distance (km)",
