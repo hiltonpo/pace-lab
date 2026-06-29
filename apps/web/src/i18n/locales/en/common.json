@@ -10,10 +10,11 @@
     "welcome": "Welcome, {{name}}"
   },
   "common": {
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "cancel": "cancel"
   },
   "plans": {
-    "planNotFound":"Plan not found, please check again",
+    "planNotFound": "Plan not found, please check again",
     "createNew": "Create New Plan",
     "title": "New Training Plan",
     "form": {
@@ -53,6 +54,10 @@
     "detail": {
       "summary": "Summary",
       "status": "Status",
+      "statusTypes": {
+        "active": "active",
+        "completed": "completed"
+      },
       "createdAt": "Created",
       "weeks": "Weeks",
       "vdot": "VDOT",
@@ -61,7 +66,10 @@
       "schedule": "Training Schedule",
       "week": "Week {{n}}",
       "totalKm": "Weekly Total",
-      "totalWeeks": "{{n}} weeks total"
+      "totalWeeks": "{{n}} weeks total",
+      "logWorkout": "Log",
+      "target": "Target",
+      "actual": "Actual"
     },
     "workout": {
       "rest": "Rest",
@@ -80,6 +88,42 @@
       "thu": "Thu",
       "fri": "Fri",
       "sat": "Sat"
+    }
+  },
+  "workout": {
+    "title": "Log Workout",
+    "target": "Target",
+    "form": {
+      "distance": "Distance (km)",
+      "duration": "Duration",
+      "durationHint": "Format: mm:ss or h:mm:ss (e.g., 25:00, 3:59:00)",
+      "pace": "Pace",
+      "heartRate": "Heart Rate",
+      "avgHr": "Avg HR",
+      "maxHr": "Max HR",
+      "rpe": "Perceived Exertion (RPE)",
+      "rpeHint": "1 = very easy, 10 = max effort",
+      "weather": "Weather",
+      "feeling": "Feeling",
+      "temperature": "Temperature (°C)",
+      "notes": "Notes",
+      "submit": "Log",
+      "submitting": "Logging..."
+    },
+    "weather": {
+      "sunny": "Sunny",
+      "cloudy": "Cloudy",
+      "rainy": "Rainy",
+      "hot": "Hot",
+      "cold": "Cold",
+      "windy": "Windy"
+    },
+    "feeling": {
+      "great": "Great",
+      "good": "Good",
+      "normal": "Normal",
+      "tired": "Tired",
+      "exhausted": "Exhausted"
     }
   }
 }

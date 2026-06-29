@@ -10,10 +10,11 @@
     "welcome": "歡迎，{{name}}"
   },
   "common": {
-    "loading": "載入中…"
+    "loading": "載入中…",
+    "cancel": "取消"
   },
   "plans": {
-    "planNotFound":"找不到相關計畫，請重新確認",
+    "planNotFound": "找不到相關計畫，請重新確認",
     "createNew": "建立新計畫",
     "title": "新訓練計畫",
     "form": {
@@ -53,6 +54,10 @@
     "detail": {
       "summary": "計畫概覽",
       "status": "狀態",
+      "statusTypes": {
+        "active": "進行中",
+        "completed": "已完成"
+      },
       "createdAt": "建立日期",
       "weeks": "週數",
       "vdot": "VDOT",
@@ -61,7 +66,10 @@
       "schedule": "訓練排程",
       "week": "第 {{n}} 週",
       "totalKm": "週里程",
-      "totalWeeks": "共 {{n}} 週"
+      "totalWeeks": "共 {{n}} 週",
+      "logWorkout": "記錄",
+      "target": "目標",
+      "actual": "實際"
     },
     "workout": {
       "rest": "休息",
@@ -70,7 +78,9 @@
       "tempo": "Tempo",
       "marathon": "Marathon Pace",
       "interval": "Interval",
-      "race": "比賽日"
+      "race": "比賽日",
+      "title": "記錄訓練",
+      "target": "目標"
     },
     "days": {
       "sun": "日",
@@ -80,6 +90,43 @@
       "thu": "四",
       "fri": "五",
       "sat": "六"
+    }
+  },
+  "workout": {
+    "title": "記錄訓練",
+    "target": "目標",
+    "form": {
+      "distance": "距離 (km)",
+      "duration": "時間",
+      "durationHint": "格式：分:秒 或 時:分:秒（例 25:00、3:59:00）",
+      "duationError": "時間格式錯誤",
+      "pace": "配速",
+      "heartRate": "心率",
+      "avgHr": "平均心率",
+      "maxHr": "最大心率",
+      "rpe": "費力程度 (RPE)",
+      "rpeHint": "1=非常輕鬆，10=全力",
+      "weather": "天氣",
+      "feeling": "體感",
+      "temperature": "溫度 (°C)",
+      "notes": "備註",
+      "submit": "記錄",
+      "submitting": "記錄中…"
+    },
+    "weather": {
+      "sunny": "晴",
+      "cloudy": "陰",
+      "rainy": "雨",
+      "hot": "熱",
+      "cold": "冷",
+      "windy": "風"
+    },
+    "feeling": {
+      "great": "很好",
+      "good": "不錯",
+      "normal": "普通",
+      "tired": "累",
+      "exhausted": "很累"
     }
   }
 }

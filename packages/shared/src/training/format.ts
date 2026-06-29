@@ -45,19 +45,27 @@ export const formatPace = (paceSecPerKm: number): string => {
  * parseDuration("5:35")    // 335
  */
 export function parseDuration(str: string): number {
-  const parts = str.split(":").map(Number);
+  const trimmed = str.trim();
 
-  if (parts.some(isNaN)) {
-    throw new Error(`Invalid duration format: ${str}`);
+  // 檢查是否符合 hh:mm:ss 格式 (秒數和分鐘必須是兩位數 00~59)
+  const isHms = /^\d+:[0-5]\d:[0-5]\d$/.test(trimmed);
+
+  // 檢查是否符合 mm:ss 格式 (秒數必須是兩位數 00~59)
+  const isMs = /^\d+:[0-5]\d$/.test(trimmed);
+
+  if (!isHms && !isMs) {
+    throw new Error(
+      `Invalid duration format: ${str}. Expected hh:mm:ss or mm:ss with valid seconds.`
+    );
   }
 
-  if (parts.length === 3) {
-    const [h, m, s] = parts;
+  const nums = trimmed.split(":").map(Number);
+
+  if (nums.length === 3) {
+    const [h, m, s] = nums;
     return h * 3600 + m * 60 + s;
-  }
-  if (parts.length === 2) {
-    const [m, s] = parts;
+  } else {
+    const [m, s] = nums;
     return m * 60 + s;
   }
-  throw new Error(`Invalid duration format: ${str}`);
 }

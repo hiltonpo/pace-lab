@@ -7,6 +7,7 @@ export * from "./training/vdot.js";
 export * from "./training/format.js";
 
 export * from "./training/generatePlan.js";
+export * from "./training/workoutSchemas.js";
 export type {
   WorkoutTemplate,
   WeekTemplate,

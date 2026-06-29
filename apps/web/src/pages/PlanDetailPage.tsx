@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   calculateTrainingPaces,
@@ -11,9 +11,9 @@ import { usePlanDetail, useDeletePlan } from "../hooks/usePlans";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PACE_SHORT_LABELS } from "@pace-lab/shared";
+import { useWorkouts } from "../hooks/useWorkouts";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
-
 
 export const PlanDetailPage = () => {
   const { t } = useTranslation();
@@ -23,6 +23,17 @@ export const PlanDetailPage = () => {
 
   const { data: plan, isLoading, isError } = usePlanDetail(id);
   const deleteMutation = useDeletePlan();
+
+  // ← 新增：抓這個計畫的所有實際紀錄
+  const { data: actualWorkouts } = useWorkouts(id ? { planId: id } : undefined);
+
+  // ← 新增：建一個 plannedWorkoutId → actual workout 的對照表
+  const actualByPlanned = new Map<string, (typeof actualWorkouts)[number]>();
+  actualWorkouts?.forEach((aw) => {
+    if (aw.plannedWorkoutId) {
+      actualByPlanned.set(aw.plannedWorkoutId, aw);
+    }
+  });
 
   if (isLoading) {
     return <p className="text-muted-foreground">{t("common.loading")}</p>;
@@ -96,7 +107,12 @@ export const PlanDetailPage = () => {
             label={t("plans.detail.weeks")}
             value={String(plan.weeksTotal)}
           />
-          <Stat label={t("plans.detail.status")} value={plan.status} />
+          <Stat
+            label={t("plans.detail.status")}
+            value={t(`plans.detail.statusTypes.${plan.status}`, {
+              defaultValue: plan.status,
+            })}
+          />
         </CardContent>
       </Card>
 
@@ -148,6 +164,8 @@ export const PlanDetailPage = () => {
               key={weekNumber}
               weekNumber={weekNumber}
               workouts={weekWorkouts}
+              planId={plan.id}
+              actualByPlanned={actualByPlanned}
             />
           ))}
       </div>
@@ -194,30 +212,31 @@ export const PlanDetailPage = () => {
 // 子元件
 // ============================================================================
 
-function Stat({ label, value }: { label: string; value: string }) {
+const Stat = ({ label, value }: { label: string; value: string }) => {
   return (
     <div className="space-y-1">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="font-medium tabular-nums">{value}</p>
     </div>
   );
-}
+};
 
-function WeekCard({
+const WeekCard = ({
   weekNumber,
   workouts,
+  planId,
+  actualByPlanned,
 }: {
   weekNumber: number;
   workouts: PlannedWorkoutResponse[];
-}) {
+  planId: string;
+  actualByPlanned: Map<string, any>;
+}) => {
   const { t } = useTranslation();
-
   const totalKm = workouts.reduce(
     (sum, w) => sum + (w.targetDistanceKm ?? 0),
     0
   );
-
-  // 按 dayOfWeek 排序確保週日→週六順序
   const sorted = [...workouts].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
 
   return (
@@ -235,15 +254,28 @@ function WeekCard({
       <CardContent>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
           {sorted.map((w) => (
-            <WorkoutCell key={w.id} workout={w} />
+            <WorkoutCell
+              key={w.id}
+              workout={w}
+              planId={planId}
+              actual={actualByPlanned.get(w.id)}
+            />
           ))}
         </div>
       </CardContent>
     </Card>
   );
-}
+};
 
-function WorkoutCell({ workout }: { workout: PlannedWorkoutResponse }) {
+const WorkoutCell = ({
+  workout,
+  planId,
+  actual,
+}: {
+  workout: PlannedWorkoutResponse;
+  planId: string;
+  actual?: any;
+}) => {
   const { t } = useTranslation();
   const dayKey = DAY_KEYS[workout.dayOfWeek];
 
@@ -251,7 +283,6 @@ function WorkoutCell({ workout }: { workout: PlannedWorkoutResponse }) {
   const displayLabel =
     workout.workoutType === "race" ? `🏁 ${typeLabel}` : typeLabel;
 
-  // 顏色強度按 workout type
   const isHighIntensity = ["tempo", "interval", "marathon"].includes(
     workout.workoutType
   );
@@ -259,32 +290,81 @@ function WorkoutCell({ workout }: { workout: PlannedWorkoutResponse }) {
   const isRest = workout.workoutType === "rest";
   const isRace = workout.workoutType === "race";
 
+  const isCompleted = !!actual;
+  const isLoggable = !isRest;
+
   return (
     <div
-      className={`rounded-md border p-2 text-xs space-y-1 ${
-        isRest
-          ? "bg-muted/30 border-muted"
+      className={`relative rounded-md border p-2 text-xs space-y-1 ${
+        isCompleted
+          ? "bg-primary/10 dark:bg-primary/20 border-primary/50 dark:border-primary/70"
+          : isRest
+          ? "bg-muted/30 dark:bg-muted/20 border-muted dark:border-muted"
           : isRace
-          ? "bg-primary/20 border-primary border-2"
+          ? "bg-primary/20 dark:bg-primary/30 border-primary border-2"
           : isHighIntensity
-          ? "bg-destructive/5 border-destructive/30"
+          ? "bg-destructive/5 dark:bg-destructive/20 border-destructive/30 dark:border-destructive/50"
           : isLong
-          ? "bg-accent border-accent-foreground/10"
-          : "bg-background"
+          ? "bg-accent dark:bg-accent/40 border-accent-foreground/10 dark:border-accent-foreground/20"
+          : "bg-background dark:bg-muted/10 border-input"
       }`}
     >
+      {/* 完成打勾 */}
+      {isCompleted && (
+        <span className="absolute top-1 right-1 text-green-600 dark:text-green-400 text-sm font-bold">
+          ✓
+        </span>
+      )}
+
       <p className="text-muted-foreground font-medium">
         {t(`plans.days.${dayKey}`)}
       </p>
       <p className="font-medium truncate">{displayLabel}</p>
-      {workout.targetDistanceKm !== null && (
-        <p className="tabular-nums">{workout.targetDistanceKm}km</p>
+
+      {/* 計畫目標 */}
+      <div>
+        {(workout.targetDistanceKm !== null ||
+          workout.targetPaceSec !== null) && (
+          <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground mb-0.5">
+            {t("plans.detail.target")}
+          </span>
+        )}
+        {workout.targetDistanceKm !== null && (
+          <p className="tabular-nums">{workout.targetDistanceKm}km</p>
+        )}
+        {workout.targetPaceSec !== null && (
+          <p className="tabular-nums text-muted-foreground">
+            {formatPace(workout.targetPaceSec)}
+          </p>
+        )}
+      </div>
+
+      {/* 已完成：實際數據 */}
+      {isCompleted && actual && (
+        <div className="mt-1 rounded bg-green-50 dark:bg-green-950/40 px-1.5 py-1 space-y-0.5">
+          <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
+            {t("plans.detail.actual")}
+          </span>
+          <p className="tabular-nums text-green-700 dark:text-green-300 font-semibold">
+            {actual.actualDistanceKm}km
+          </p>
+          {actual.actualPaceSec && (
+            <p className="tabular-nums text-green-600/80 dark:text-green-400/80">
+              {formatPace(actual.actualPaceSec)}
+            </p>
+          )}
+        </div>
       )}
-      {workout.targetPaceSec !== null && (
-        <p className="tabular-nums text-muted-foreground">
-          {formatPace(workout.targetPaceSec)}
-        </p>
+
+      {/* 未完成 + 可記錄：記錄按鈕 */}
+      {!isCompleted && isLoggable && (
+        <Link
+          to={`/workouts/new?plannedId=${workout.id}&planId=${planId}`}
+          className="block mt-1 text-center rounded border border-primary/40 dark:border-primary/60 text-primary dark:text-primary py-0.5 text-[10px] font-medium hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+        >
+          {t("plans.detail.logWorkout")}
+        </Link>
       )}
     </div>
   );
-}
+};

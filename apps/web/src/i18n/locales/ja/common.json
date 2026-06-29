@@ -10,10 +10,11 @@
     "welcome": "ようこそ、{{name}} さん"
   },
   "common": {
-    "loading": "読み込み中…"
+    "loading": "読み込み中…",
+    "cancel": "キャンセル"
   },
   "plans": {
-    "planNotFound":"計画は見つかりません。再確認してください",
+    "planNotFound": "計画が見つかりません。もう一度ご確認ください",
     "createNew": "新しい計画を作成",
     "title": "新しい訓練計画",
     "form": {
@@ -53,6 +54,10 @@
     "detail": {
       "summary": "計画概要",
       "status": "ステータス",
+      "statusTypes": {
+        "active": "進行中",
+        "completed": "完了"
+      },
       "createdAt": "作成日",
       "weeks": "週数",
       "vdot": "VDOT",
@@ -60,8 +65,11 @@
       "paces": "推奨ペース",
       "schedule": "訓練スケジュール",
       "week": "Week {{n}}",
-      "totalKm": "週間距離",
-      "totalWeeks": "全 {{n}} 週"
+      "totalKm": "週間総距離",
+      "totalWeeks": "全 {{n}} 週",
+      "logWorkout": "記録",
+      "target": "目標",
+      "actual": "実績"
     },
     "workout": {
       "rest": "休息",
@@ -80,6 +88,42 @@
       "thu": "木",
       "fri": "金",
       "sat": "土"
+    }
+  },
+  "workout": {
+    "title": "トレーニング記録",
+    "target": "目標",
+    "form": {
+      "distance": "距離 (km)",
+      "duration": "時間",
+      "durationHint": "形式：分:秒 または 時:分:秒（例 25:00、3:59:00）",
+      "pace": "ペース",
+      "heartRate": "心拍数",
+      "avgHr": "平均心拍",
+      "maxHr": "最大心拍",
+      "rpe": "主観的運動強度 (RPE)",
+      "rpeHint": "1 = 非常に楽、10 = 全力",
+      "weather": "天気",
+      "feeling": "体感",
+      "temperature": "気温 (°C)",
+      "notes": "メモ",
+      "submit": "記録する",
+      "submitting": "記録中…"
+    },
+    "weather": {
+      "sunny": "晴れ",
+      "cloudy": "曇り",
+      "rainy": "雨",
+      "hot": "暑い",
+      "cold": "寒い",
+      "windy": "強風"
+    },
+    "feeling": {
+      "great": "絶好調",
+      "good": "好調",
+      "normal": "普通",
+      "tired": "少し疲れ",
+      "exhausted": "へとへと"
     }
   }
 }
