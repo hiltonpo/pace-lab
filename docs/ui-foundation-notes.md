@@ -504,3 +504,97 @@ Sprint 2 過程中遇到的「**生產環境才暴露**」的問題：
 4. **React 18 + shadcn forwardRef** → 手動加回 forwardRef 包
 
 這些都是 monorepo + 跨服務部署的「**真實雷**」——記下來避免 Sprint 3+ 再踩。
+
+---
+
+## Sprint 3 補充
+
+### Recharts（圖表庫）
+
+- 用「元件組合」描述圖表（`<LineChart>` 包 `<XAxis>` `<Line>` `<Tooltip>`），不像 Chart.js 給一個大設定物件——符合 React 用元件組 UI 的思路
+- 資料是「物件陣列」，`dataKey` 把「資料欄位」對應到「圖表元件」
+
+```tsx
+<ResponsiveContainer width="100%" height={300}>
+  <LineChart data={weeklyData}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="week" />
+    <YAxis />
+    <Tooltip />
+    <Line type="monotone" dataKey="distance" stroke="#2563eb" dot={{ r: 4 }} />
+  </LineChart>
+</ResponsiveContainer>
+```
+
+關鍵點：
+
+- `ResponsiveContainer` 包起來才能 RWD（要固定 `height`、`width="100%"`，且父容器要有明確寬度）
+- 配速圖 Y 軸要 `reversed`——配速數字越小越快，反轉後「線往上 = 進步」符合直覺
+- `tickFormatter` 格式化軸刻度（秒數 → `5:30`）
+- 自訂 tooltip 用 `content={<X />}`，`payload[0].payload` 才是「原始那筆資料物件」（外層 payload 是 Recharts 包的陣列）
+- 顏色：`--primary` 是 oklch 格式，**不能**寫 `hsl(var(--primary))`（會變無效顏色、線透明）。用 `var(--primary)` 或固定色
+- 單筆資料只有一個點、沒有線 → 加 `dot={{ r: 4 }}` 才看得到點
+
+### 使用者輸入的坑
+
+- **`Number("") === 0`（不是 NaN）**——`parseDuration` 驗證時空字串會躲過 `parts.some(isNaN)`（`Number("")` 是 0）。要用正則 `/^\d+$/` 檢查每一段，才擋得掉 `"60:"` 這種空段
+- **`valueAsNumber` 清空變 NaN**（過不了 `z.number()`）。選填數字欄位改用 `setValueAs: (v) => v === "" ? null : Number(v)`——空 → null（符合「選填」語意），有值 → 數字
+- 配速預覽用 `Number.isFinite()` 防禦（擋 NaN / Infinity）
+
+### Zod `.partial()` + `.refine()` 順序
+
+`z.object().refine()` 回傳 `ZodEffects`，失去 `.partial()`。解法：先定義純 object schema，`createInputSchema` = object + refine，`updateInputSchema` = object.partial() + refine（先 partial 再 refine）。
+
+### 元件重用（新增 / 編輯共用）
+
+`CreateWorkoutPage` 用 `useParams` 判斷模式（有 `:id` = 編輯）。編輯模式用 `useEffect` + `reset()` 把既有資料填回表單（時間欄位額外用 `formatDuration` 把秒數轉回字串顯示）。少寫一個 EditPage、邏輯集中。
+
+```tsx
+const { id: editId } = useParams();
+const isEditMode = !!editId;
+const { data: existing } = useWorkout(editId);
+
+useEffect(() => {
+  if (existing) reset({ /* existing 的欄位 */ });
+}, [existing, reset]);
+
+const mutation = isEditMode ? updateMutation : createMutation;
+```
+
+### queryKey 帶參數 = 分開 cache
+
+```typescript
+useQuery({ queryKey: ["workouts", params ?? {}], queryFn: () => listWorkouts(params) });
+```
+
+不同篩選參數 = 不同 cache（`["workouts", {}]` vs `["workouts", { planId }]`）。`invalidateQueries({ queryKey: ["workouts"] })` 用 prefix 一次清光所有。
+
+### 呈現方式的選擇
+
+- 單一比例（完成率）用**進度條**，不用圖表——不是所有數據都要圖表，挑對呈現方式
+- interval 顯示「8 × 1km・3min 慢跑」**取代**推算的總公里數（8km）——顯示對執行有意義的資訊，而非推算加總
+- 「已完成」用綠色語意系統貫穿（打勾、標籤、數字、背景框都綠），跟「目標」的中性灰對比
+
+### toggle 按鈕選擇
+
+RPE / 天氣 / 體感用「點選 / 再點取消」的 toggle 按鈕，比 dropdown 快（一鍵選定）：
+
+```tsx
+onClick={() => setValue("rpe", watchedRpe === n ? null : n)}
+```
+
+RPE 加顏色漸層（綠→黃→橘→紅）讓強度高低一眼可辨。
+
+### React 順序鐵則
+
+- 所有 hooks（`useState` / `useQuery` / `useMutation`...）**必須**在提前 return 之前呼叫（每次 render 順序要一致，否則 React 報錯）
+- 純函式定義在**元件外**（避免每次 render 重建）
+- 一般計算放提前 return **之後**（此時型別已收窄，例如 `plan` 確定非 undefined，可安全用）
+
+### dark mode 對比
+
+深色背景上，淡色疊加（`bg-primary/5`）幾乎看不見——暗色要更高不透明度（`dark:bg-primary/20`）。用 `dark:` 前綴針對暗色給不同值，改完亮色暗色都要測。
+
+### 資料庫：schema 改動不回填舊資料
+
+migration 加欄位只改「表結構」，**不回填舊 row**——舊資料的新欄位是 null。開發階段測新欄位要「建新資料」，不是看舊資料。真實環境要回填得寫 data migration 腳本。

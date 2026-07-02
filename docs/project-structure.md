@@ -28,8 +28,9 @@ apps/api/
 ├── prisma/
 │   ├── schema.prisma         ← DB schema 定義（所有 model、relation、index）
 │   └── migrations/           ← Prisma 自動生成的 SQL migration 檔
-│       ├── 20260601_xxxx/    ← Sprint 1: User + Session
-│       └── 20260601_yyyy/    ← Sprint 2: TrainingPlan + PlannedWorkout
+│       ├── 20260525_init/                              ← Sprint 1: User + Session
+│       ├── 20260605_add_training_plans_and_workouts/   ← Sprint 2: TrainingPlan + PlannedWorkout
+│       └── 20260625_add_actual_workouts.../            ← Sprint 3: ActualWorkout + interval 結構
 ├── src/
 │   ├── auth/                 ← 認證相關
 │   │   ├── cookie.ts         ← cookie 屬性、跨網域設定
@@ -37,7 +38,8 @@ apps/api/
 │   │   └── google.ts         ← Arctic Google OAuth client
 │   ├── routes/               ← API 路由
 │   │   ├── auth.ts           ← /api/auth/* (OAuth flow、logout、/api/me)
-│   │   └── plans.ts          ← /api/plans (CRUD)
+│   │   ├── plans.ts          ← /api/plans (CRUD)
+│   │   └── workouts.ts       ← /api/workouts (CRUD + PATCH + 篩選)  ← Sprint 3
 │   ├── db.ts                 ← Prisma client 實體（單一來源）
 │   └── index.ts              ← Fastify app 啟動入口、CORS、plugin 註冊
 ├── .env                      ← 本地環境變數（不 commit）
@@ -63,7 +65,9 @@ apps/web/
 │   ├── pages/                ← 路由對應的頁面元件
 │   │   ├── HomePage.tsx
 │   │   ├── CreatePlanPage.tsx
-│   │   └── PlanDetailPage.tsx
+│   │   ├── PlanDetailPage.tsx    ← 含完成狀態、完成率、interval 顯示（Sprint 3 擴充）
+│   │   ├── CreateWorkoutPage.tsx ← 記錄/編輯訓練共用（Sprint 3）
+│   │   └── ProgressPage.tsx      ← 訓練量/配速趨勢圖（Sprint 3）
 │   ├── components/
 │   │   ├── ui/               ← shadcn 元件（不放業務邏輯）
 │   │   │   ├── button.tsx
@@ -75,6 +79,7 @@ apps/web/
 │   ├── hooks/                ← 自訂 React hooks
 │   │   ├── useMe.ts          ← 取得當前使用者 + 登入登出
 │   │   ├── usePlans.ts       ← 計畫列表 / 詳情 / 刪除
+│   │   ├── useWorkouts.ts    ← 訓練紀錄 CRUD + 編輯（Sprint 3）
 │   │   ├── useTheme.ts       ← dark mode 切換
 │   │   └── useLocale.ts      ← 語言切換
 │   ├── i18n/                 ← 多語言設定
@@ -86,6 +91,7 @@ apps/web/
 │   ├── lib/
 │   │   ├── api.ts            ← me / logout API
 │   │   ├── plansApi.ts       ← 計畫相關 API
+│   │   ├── workoutsApi.ts    ← 訓練紀錄 API（Sprint 3）
 │   │   └── utils.ts          ← shadcn 的 cn() 函式
 │   ├── App.tsx               ← Router 設定（BrowserRouter + Routes）
 │   ├── main.tsx              ← React 入口、QueryClientProvider 等 wrap
@@ -119,15 +125,16 @@ packages/shared/
 │   ├── training/             ← 訓練相關（Sprint 2 主要工作區）
 │   │   ├── raceType.ts       ← Race type enum + 距離常數
 │   │   ├── vdot.ts           ← Jack Daniels VDOT 公式、配速計算、PACE_SHORT_LABELS
-│   │   ├── format.ts         ← formatDuration / formatPace / parseDuration
-│   │   ├── planSchemas.ts    ← Zod schemas (createPlanInputSchema 等)
-│   │   ├── generatePlan.ts   ← 計畫產生器演算法
+│   │   ├── format.ts         ← formatDuration/formatPace/parseDuration/formatInterval（Sprint 3 加 formatInterval）
+│   │   ├── planSchemas.ts    ← 計畫 Zod schemas（Sprint 3 加 interval/warmup/cooldown response 欄位）
+│   │   ├── workoutSchemas.ts ← 訓練紀錄 Zod schemas + WEATHER/FEELING_OPTIONS（Sprint 3）
+│   │   ├── generatePlan.ts   ← 計畫產生器（Sprint 3 加 interval 結構、warmup/cooldown、notes）
 │   │   ├── templates/
 │   │   │   ├── types.ts                 ← WorkoutTemplate、WeekTemplate 型別
 │   │   │   └── marathon-templates.ts    ← 8/12/16 週模板
 │   │   ├── vdot.spec.ts                 ← 12 個測試
-│   │   ├── format.spec.ts               ← 11 個測試
-│   │   └── generatePlan.spec.ts         ← 31 個測試
+│   │   ├── format.spec.ts               ← parseDuration 嚴格驗證測試（Sprint 3 擴充）
+│   │   └── generatePlan.spec.ts         ← interval/warmup 測試（Sprint 3 擴充）
 │   └── index.ts              ← export 所有公開內容（barrel file）
 ├── dist/                     ← build 產物（不 commit、deploy 時 build）
 ├── package.json              ← main 指向 ./dist/index.js
@@ -182,6 +189,31 @@ import {
 } from "@pace-lab/shared";
 ```
 
+### Sprint 3 加入的 import
+
+```typescript
+import {
+  // Types
+  CreateWorkoutInput,
+  UpdateWorkoutInput,
+  ActualWorkoutResponse,
+  ListWorkoutsQuery,
+  IntervalStructure,
+
+  // Zod schemas
+  createWorkoutInputSchema,
+  updateWorkoutInputSchema,
+  listWorkoutsQuerySchema,
+
+  // 格式工具
+  formatInterval,
+
+  // 常數
+  WEATHER_OPTIONS,
+  FEELING_OPTIONS,
+} from "@pace-lab/shared";
+```
+
 ## 文件：`docs/`
 
 ```
@@ -219,6 +251,7 @@ docs/
 | 加環境變數（前端）       | `apps/web/.env` + `.env.example` + `vite-env.d.ts` 加型別 + Vercel Variables |
 | 加環境變數（後端）       | `apps/api/.env` + `.env.example` + Railway Variables                         |
 | 加部署相關設定           | Railway dashboard / Vercel dashboard，code 端不動                            |
+| 加圖表 / 資料視覺化      | `apps/web/src/pages/ProgressPage.tsx` + recharts                            |
 
 ## 路徑速查（常忘的）
 

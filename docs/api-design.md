@@ -245,3 +245,83 @@ async function getCurrentUser(request) {
 - **Frontend optimistic UI**：TanStack Query 支援、但要小心 rollback 邏輯
 
 這些屬於「**之後遇到再做**」的優化——不過度設計。
+
+## Sprint 3 新增慣例
+
+### PATCH 部分更新
+
+Sprint 2 只有 POST/GET/DELETE，Sprint 3 引入 PATCH（`PATCH /api/workouts/:id`）：
+
+- Zod schema 用 `.partial()` 讓所有欄位可選（讓使用者只傳想改的欄位）
+- **陷阱**：`.partial()` 要從「純 object schema」呼叫，不能從加了 `.refine()` 的版本。因為 `z.object().refine()` 回傳 `ZodEffects`，會失去 `.partial()` 方法。解法：先定義純 `workoutObjectSchema`，create 版 = object + refine、update 版 = object.partial() + refine
+- 後端只更新有給的欄位：用 `input.X !== undefined` 判斷（**不是** `if (input.X)`，才能區分「沒傳」vs「傳 null/0」）
+- 衍生欄位在依賴改變時重算：距離或時間改 → 重算配速，用 `?? existing` 取新值或舊值
+
+```typescript
+const data: Record<string, unknown> = {};
+if (input.rpe !== undefined) data.rpe = input.rpe;
+// distance 或 duration 改了才重算 pace
+if (input.actualDistanceKm !== undefined || input.actualDurationSec !== undefined) {
+  const distance = input.actualDistanceKm ?? existing.actualDistanceKm;
+  const duration = input.actualDurationSec ?? existing.actualDurationSec;
+  data.actualPaceSec = calcPaceSec(distance, duration);
+}
+```
+
+### Query string 篩選
+
+`GET /api/workouts?planId=xxx&from=&to=`：
+
+- Zod schema 全 `optional`（篩選條件有就用、沒有就忽略）
+- 動態組 where：先 `{ userId }`，有條件才 `where.X = ...`（同 Laravel 條件式 `->where()`）
+- 日期範圍用 `gte` / `lte`（`>=` / `<=`）
+
+```typescript
+const where: Prisma.ActualWorkoutWhereInput = { userId: user.id };
+if (planId) where.planId = planId;
+if (from || to) {
+  where.date = {};
+  if (from) where.date.gte = new Date(from);
+  if (to) where.date.lte = new Date(to);
+}
+```
+
+用 `Prisma.XWhereInput` 型別而非 `any`，IDE 才會補全 gte/lte、擋掉打錯的 key。
+
+### 跨欄位驗證用 refine
+
+單欄位 `.min()` / `.max()` 管不到「欄位之間的關係」。`.refine()` 拿到整個物件，可驗證跨欄位規則（例如「最大心率 >= 平均心率」）：
+
+```typescript
+.refine(
+  (data) => {
+    if (data.avgHeartRate != null && data.maxHeartRate != null) {
+      return data.maxHeartRate >= data.avgHeartRate;
+    }
+    return true; // 任一沒填就不檢查
+  },
+  { message: "最大心率不應低於平均心率", path: ["maxHeartRate"] },
+)
+```
+
+### 冗餘欄位換查詢效率
+
+`actual_workouts` 同時存 `plannedWorkoutId` 跟 `planId`（後者可由前者 join 查到）。直接存 `planId` 讓「查某計畫所有紀錄」變單一 index 查詢、不用 join——用一點冗餘換查詢效率，同 snapshot 思路。
+
+### onDelete 三種策略
+
+`actual_workouts` 三個外鍵用了三種 onDelete，各有語意：
+
+| 外鍵 | onDelete | 為什麼 |
+|---|---|---|
+| userId | Cascade | user 刪 → 紀錄一起刪（無孤兒） |
+| plannedWorkoutId | SetNull | 計畫項目刪 → 紀錄保留、連結設 null（實際跑過的事不該消失） |
+| planId | Cascade | 整個計畫刪 → 相關紀錄一起刪 |
+
+### 建立子資源時記得同步 schema 變更
+
+**跨 sprint 的經典漏洞**：Sprint 2 寫的 `createMany`（建計畫的 plannedWorkouts）在 Sprint 3 加了 `intervals` / `warmupKm` / `cooldownKm` 欄位後，若沒同步更新 `createMany` 的 `data.map`，generatePlan 產出的新欄位不會被寫入 DB（存成 null）。schema、產生器、寫入三處改欄位時要同步。
+
+### 使用者輸入驗證訊息中文化
+
+會被使用者看到的欄位（距離、時間、心率、溫度、RPE）的 `.min()` / `.max()` 都帶自訂中文 message；按鈕選的欄位（weather / feeling enum）的 message 只是後端防禦（前端選按鈕不會觸發），不用講究。

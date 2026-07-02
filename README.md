@@ -35,7 +35,18 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - Plan list and detail page with full weekly training schedule
 - Visual differentiation by workout type (rest / easy / quality / long / race day)
 - Responsive design (mobile to desktop)
-- 54 unit tests in `packages/shared`
+
+### Sprint 3: Workout Logging + Progress Charts
+
+- Log actual workouts (distance, time, heart rate, RPE, weather, feeling, notes)
+- Auto-calculated pace; completion status shown on plan detail
+- **Target vs actual** comparison per workout (green = completed)
+- Edit logged workouts (single form reused for create / edit)
+- **Progress charts** (Recharts): weekly volume trend, pace trend (reversed Y-axis)
+- Completion rate (overall + by workout type)
+- **Interval structure** display (sets × distance, recovery) replacing raw total distance
+- Warm-up / cool-down and per-type training notes
+- Chinese validation messages; cross-field validation (max HR ≥ avg HR)
 
 ## Tech Stack
 
@@ -46,6 +57,7 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - **Tailwind CSS v4 + shadcn/ui** (Radix-based)
 - **React Router v7** (multi-page routing)
 - **React Hook Form + Zod** (form validation, shared with backend)
+- **Recharts** (progress charts)
 - **react-i18next** (Japanese / Traditional Chinese / English)
 - **Dark mode** (system preference + manual toggle)
 - Deployed on Vercel
@@ -57,6 +69,7 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - Self-implemented session auth (SHA-256 hashed tokens)
 - Arctic for Google OAuth
 - **Zod request validation** (shared schemas from `packages/shared`)
+- REST API with CRUD + PATCH, query-string filtering
 - Deployed on Railway
 
 ### Monorepo
@@ -64,7 +77,7 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - pnpm workspaces
 - Shared types, Zod schemas, and pure functions in `packages/shared`
 - Vitest unit tests
-- VDOT formula, pace calculation, plan generator all live here
+- VDOT formula, pace calculation, plan generator, format helpers all live here
 
 ## Project Structure
 
@@ -73,21 +86,21 @@ pace-lab/
 ├── apps/
 │   ├── web/                    # Frontend (React + Vite)
 │   │   ├── src/
-│   │   │   ├── pages/          # 對應路由的頁面元件
+│   │   │   ├── pages/          # 對應路由的頁面元件（Plan / Workout / Progress）
 │   │   │   ├── components/     # 可重用 UI（Layout、ui/* shadcn 元件）
-│   │   │   ├── hooks/          # 自訂 React hooks
+│   │   │   ├── hooks/          # 自訂 React hooks（usePlans / useWorkouts 等）
 │   │   │   ├── i18n/           # 多語系翻譯檔
 │   │   │   └── lib/            # API client、工具函式
 │   │   └── ...
 │   └── api/                    # Backend (Fastify + Prisma)
 │       ├── src/
-│       │   ├── routes/         # API endpoints (auth.ts, plans.ts)
+│       │   ├── routes/         # API endpoints (auth.ts, plans.ts, workouts.ts)
 │       │   ├── auth/           # Session、cookie、OAuth 邏輯
 │       │   └── db.ts           # Prisma client
 │       └── prisma/             # DB schema 與 migrations
 ├── packages/
 │   └── shared/                 # 共用 types、Zod schemas、純函式
-│       └── src/training/       # VDOT 公式、計畫模板、generator
+│       └── src/training/       # VDOT 公式、計畫模板、generator、workout schemas
 ├── docs/
 │   ├── project-structure.md
 │   ├── railway-deploy-guide.md
@@ -153,7 +166,7 @@ pnpm dev
 
 pnpm --filter @pace-lab/shared test
 
-# 目前覆蓋 vdot 公式、format 工具、計畫產生器共 54 個測試
+# 覆蓋 VDOT 公式、format 工具（含 parseDuration 嚴格驗證）、計畫產生器（含 interval 結構）
 
 ```
 
@@ -162,8 +175,8 @@ pnpm --filter @pace-lab/shared test
 - [Project Structure](./docs/project-structure.md) — 目錄結構與檔案職責
 - [Railway Deployment Guide](./docs/railway-deploy-guide.md) — pnpm monorepo + Prisma 部署到 Railway 的流程與問題處理
 - [Vercel Deployment Guide](./docs/vercel-deploy-guide.md) — Vite 部署到 Vercel、跨網域 cookie、OAuth 整合
-- [UI Foundation Notes](./docs/ui-foundation-notes.md) — UI 設計決策、設計 token、Tailwind v4、shadcn 整合、Sprint 2 前端模式
-- [API Design Conventions](./docs/api-design.md) — REST 慣例、HTTP status code、Zod 驗證、權限邊界、transaction 等
+- [UI Foundation Notes](./docs/ui-foundation-notes.md) — UI 設計決策、Tailwind v4、shadcn、Sprint 2 前端模式、Sprint 3（Recharts、元件重用等）
+- [API Design Conventions](./docs/api-design.md) — REST 慣例、Zod 驗證、權限邊界、transaction、Sprint 3（PATCH / query 篩選 / refine）
 
 ## Design Decisions
 
@@ -184,7 +197,7 @@ Sprint 2 進一步把純函式（VDOT 公式、配速計算、計畫產生器）
 
 ### Prisma String + Zod enum over Prisma Enum
 
-對於可列舉的欄位（如 `goalRaceType`），DB 層用 `String`、應用層用 Zod 的 `z.enum([...])` 做 runtime 驗證。
+對於可列舉的欄位（如 `goalRaceType`、`weather`、`feeling`），DB 層用 `String`、應用層用 Zod 的 `z.enum([...])` 做 runtime 驗證。
 
 理由：
 
@@ -202,7 +215,7 @@ VDOT 計算、計畫產生器都是純函式（不依賴 DB、不依賴 React st
 
 ### Snapshot pattern for derived data
 
-`TrainingPlan.vdot` 存的是「建立當下計算的結果」，不是每次查詢重算。如果未來公式調整，舊計畫保留歷史值。
+`TrainingPlan.vdot` 存的是「建立當下計算的結果」，不是每次查詢重算。如果未來公式調整，舊計畫保留歷史值。`ActualWorkout.actualPaceSec`、`planId` 也採同樣思路——存衍生值換查詢效率。
 
 DB 是「事件紀錄」不是「即時 view」——這個思路適用於所有衍生欄位。
 
@@ -216,6 +229,10 @@ DB 是「事件紀錄」不是「即時 view」——這個思路適用於所有
 ```
 
 GitHub、GitLab 等成熟服務都採同樣做法。
+
+### PATCH for partial updates
+
+訓練紀錄的修改用 PATCH（部分更新）而非 PUT（整體替換）。Zod schema 用 `.partial()` 讓欄位可選；後端用 `!== undefined` 區分「沒傳」vs「傳 null/0」，只更新有給的欄位。
 
 ### Cross-origin secure cookies
 
@@ -242,10 +259,16 @@ Sprint 2 過程中也碰到 pnpm 嚴格依賴的雷（peer dependency 如 `tslib
 - [x] Sprint 1: Authentication & deployment infrastructure
 - [x] Sprint 1.5: UI foundation (Tailwind v4, shadcn, dark mode, i18n)
 - [x] Sprint 2: Training plan generator (Jack Daniels VDOT formula)
-- [ ] Sprint 3: Workout logging + progress charts
+- [x] Sprint 3: Workout logging + progress charts
 - [ ] Sprint 4: PWA support, offline-first
 - [ ] Sprint 5: Personal records, plan adjustment
 - [ ] Sprint 6: Polish + demo video
+
+### Sprint 4+ Backlog (ideas parked)
+
+- Interval-specific logging format: record the main-set pace only (excluding recovery / warm-up), to avoid diluting interval pace with "total distance ÷ total time"
+- Edit plan / delete a single planned workout (will trigger `ActualWorkout` SetNull)
+- Per-rep interval logging (surface pace fade across reps as a fatigue indicator)
 
 ## License
 
