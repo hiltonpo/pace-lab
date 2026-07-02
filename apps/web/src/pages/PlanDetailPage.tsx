@@ -5,36 +5,66 @@ import {
   calculateTrainingPaces,
   formatDuration,
   formatPace,
+  formatInterval,
+  PACE_SHORT_LABELS,
   type PlannedWorkoutResponse,
+  type ActualWorkoutResponse,
 } from "@pace-lab/shared";
 import { usePlanDetail, useDeletePlan } from "../hooks/usePlans";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PACE_SHORT_LABELS } from "@pace-lab/shared";
-import { useWorkouts } from "../hooks/useWorkouts";
+import { useWorkouts } from "@/hooks/useWorkouts";
 import { PlusCircle, PencilLineIcon } from "lucide-react";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+/** 算某組 planned 的完成數與百分比 */
+const calcStats = (
+  group: PlannedWorkoutResponse[],
+  actualByPlanned: Map<string, unknown>
+) => {
+  const total = group.length;
+  const completed = group.filter((w) => actualByPlanned.has(w.id)).length;
+  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+  return { total, completed, percent };
+};
+
+/** 算計畫完成率(排除 rest，看有對應 actual 的比例) */
+const calcCompletion = (
+  plannedWorkouts: PlannedWorkoutResponse[],
+  actualByPlanned: Map<string, unknown>
+) => {
+  // 需要完成的(排除 rest)
+  const loggable = plannedWorkouts.filter(
+    (w) => w.workoutType !== "rest" && w.workoutType !== "race"
+  );
+  return calcStats(loggable, actualByPlanned);
+};
+
+/** 各類型的完成率(只列計畫裡有的類型) */
+const calcCompletionByType = (
+  plannedWorkouts: PlannedWorkoutResponse[],
+  actualByPlanned: Map<string, unknown>
+) =>
+  ["easy", "long", "tempo", "interval", "marathon"]
+    .map((type) => {
+      const ofType = plannedWorkouts.filter((w) => w.workoutType === type);
+      return {
+        type,
+        ...calcStats(ofType, actualByPlanned),
+      };
+    })
+    .filter((x) => x.total > 0); // 計畫裡沒有的類型不顯示
 
 export const PlanDetailPage = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
   const { data: plan, isLoading, isError } = usePlanDetail(id);
   const deleteMutation = useDeletePlan();
-
   // ← 新增：抓這個計畫的所有實際紀錄
   const { data: actualWorkouts } = useWorkouts(id ? { planId: id } : undefined);
-
-  // ← 新增：建一個 plannedWorkoutId → actual workout 的對照表
-  const actualByPlanned = new Map<string, (typeof actualWorkouts)[number]>();
-  actualWorkouts?.forEach((aw) => {
-    if (aw.plannedWorkoutId) {
-      actualByPlanned.set(aw.plannedWorkoutId, aw);
-    }
-  });
 
   if (isLoading) {
     return <p className="text-muted-foreground">{t("common.loading")}</p>;
@@ -59,6 +89,21 @@ export const PlanDetailPage = () => {
     );
   }
 
+  // ← 新增：建一個 plannedWorkoutId → actual workout 的對照表
+  const actualByPlanned = new Map<string, ActualWorkoutResponse>();
+  actualWorkouts?.forEach((aw) => {
+    if (aw.plannedWorkoutId) {
+      actualByPlanned.set(aw.plannedWorkoutId, aw);
+    }
+  });
+
+  // ← 新增:算完成率、各類型的完成率
+  const completion = calcCompletion(plan.plannedWorkouts, actualByPlanned);
+  const completionByType = calcCompletionByType(
+    plan.plannedWorkouts,
+    actualByPlanned
+  );
+
   // 即時算出 VDOT 跟五種配速（不靠 DB 存的 vdot，可以驗證一致性）
   const paces = calculateTrainingPaces(plan.goalRaceType, plan.goalTimeSec);
 
@@ -70,6 +115,10 @@ export const PlanDetailPage = () => {
     }
     workoutsByWeek.get(w.weekNumber)!.push(w);
   });
+  // 暫時 debug:看有沒有 interval workout 帶 intervals 資料
+  const intervalWorkouts = plan.plannedWorkouts.filter(
+    (w) => w.workoutType === "interval"
+  );
 
   const handleDelete = () => {
     deleteMutation.mutate(plan.id, {
@@ -92,6 +141,51 @@ export const PlanDetailPage = () => {
           ← Back
         </Button>
       </div>
+      {/* 完成率 */}
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          {/* 總完成率 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium">
+                {t("plans.detail.completion")}
+              </span>
+              <span className="tabular-nums text-muted-foreground">
+                {completion.completed} / {completion.total}
+              </span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${completion.percent}%` }}
+              />
+            </div>
+            <p className="text-right text-lg font-semibold tabular-nums text-primary">
+              {completion.percent}%
+            </p>
+          </div>
+
+          {/* 分類型完成率 */}
+          <div className="pt-2 border-t space-y-2">
+            {completionByType.map((item) => (
+              <div key={item.type} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span>{t(`plans.workout.${item.type}`)}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {item.completed}/{item.total} ({item.percent}%)
+                  </span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary/70 transition-all"
+                    style={{ width: `${item.percent}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 計畫概覽 */}
       <Card>
@@ -231,7 +325,7 @@ const WeekCard = ({
   weekNumber: number;
   workouts: PlannedWorkoutResponse[];
   planId: string;
-  actualByPlanned: Map<string, any>;
+  actualByPlanned: Map<string, ActualWorkoutResponse>;
 }) => {
   const { t } = useTranslation();
   const totalKm = workouts.reduce(
@@ -275,7 +369,7 @@ const WorkoutCell = ({
 }: {
   workout: PlannedWorkoutResponse;
   planId: string;
-  actual?: any;
+  actual?: ActualWorkoutResponse;
 }) => {
   const { t } = useTranslation();
   const dayKey = DAY_KEYS[workout.dayOfWeek];
@@ -323,6 +417,7 @@ const WorkoutCell = ({
       <p className="font-medium truncate">{displayLabel}</p>
 
       {/* 計畫目標 */}
+      {/* 計畫目標 */}
       <div>
         {(workout.targetDistanceKm !== null ||
           workout.targetPaceSec !== null) && (
@@ -330,12 +425,30 @@ const WorkoutCell = ({
             {t("plans.detail.target")}
           </span>
         )}
-        {workout.targetDistanceKm !== null && (
-          <p className="tabular-nums">{workout.targetDistanceKm}km</p>
+
+        {/* interval：顯示結構取代總公里數 */}
+        {workout.intervals ? (
+          <p className="text-[10px] text-destructive/80 dark:text-destructive/90 leading-tight">
+            {formatInterval(workout.intervals)}
+          </p>
+        ) : (
+          /* 非 interval：顯示總公里數 */
+          workout.targetDistanceKm !== null && (
+            <p className="tabular-nums">{workout.targetDistanceKm}km</p>
+          )
         )}
+
+        {/* 配速（interval 跟非 interval 都顯示）*/}
         {workout.targetPaceSec !== null && (
           <p className="tabular-nums text-muted-foreground">
             {formatPace(workout.targetPaceSec)}
+          </p>
+        )}
+
+        {/* warmup/cooldown */}
+        {(workout.warmupKm || workout.cooldownKm) && (
+          <p className="text-[9px] text-muted-foreground">
+            W{workout.warmupKm ?? 0} / C{workout.cooldownKm ?? 0} km
           </p>
         )}
       </div>

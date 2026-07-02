@@ -14,6 +14,18 @@
     "cancel": "cancel",
     "edit": "edit"
   },
+  "nav": {
+    "plans": "Plans",
+    "progress": "Progress"
+  },
+  "progress": {
+    "title": "Training Progress",
+    "weeklyVolume": "Weekly Volume (km)",
+    "paceTrend": "Pace Trend",
+    "paceHint": "Higher = faster",
+    "noData": "No workouts logged yet",
+    "noPaceData": "No pace data yet"
+  },
   "plans": {
     "planNotFound": "Plan not found, please check again",
     "createNew": "Create New Plan",
@@ -70,7 +82,8 @@
       "totalWeeks": "{{n}} weeks total",
       "logWorkout": "Log",
       "target": "Target",
-      "actual": "Actual"
+      "actual": "Actual",
+      "completion": "completion"
     },
     "workout": {
       "rest": "Rest",
@@ -79,6 +92,8 @@
       "tempo": "Tempo",
       "marathon": "Marathon Pace",
       "interval": "Interval",
+      "warmup": "Warm-up",
+      "cooldown": "Cool-down",
       "race": "Race Day"
     },
     "days": {

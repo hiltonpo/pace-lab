@@ -61,6 +61,16 @@ export const plannedWorkoutSchema = z.object({
   targetDistanceKm: z.number().nullable(),
   targetDurationSec: z.number().int().nullable(),
   notes: z.string().nullable(),
+  warmupKm: z.number().nullable(),
+  cooldownKm: z.number().nullable(),
+  intervals: z
+    .object({
+      sets: z.number(),
+      setDistanceMeters: z.number(),
+      recoveryDurationSec: z.number(),
+      recoveryType: z.enum(["easy", "rest"]),
+    })
+    .nullable(),
 });
 
 export type PlannedWorkoutResponse = z.infer<typeof plannedWorkoutSchema>;

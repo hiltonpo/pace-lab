@@ -8,6 +8,7 @@ import {
   parseDuration,
   formatDuration,
   formatPace,
+  formatInterval,
   WEATHER_OPTIONS,
   FEELING_OPTIONS,
   type CreateWorkoutInput,
@@ -178,15 +179,32 @@ export function CreateWorkoutPage() {
           {t("workout.title")}
         </h1>
         {plannedWorkout && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {t(`plans.workout.${plannedWorkout.workoutType}`)}
-            {plannedWorkout.targetDistanceKm
-              ? ` · ${t("workout.target")} ${plannedWorkout.targetDistanceKm}km`
-              : ""}
-            {plannedWorkout.targetPaceSec
-              ? ` · ${formatPace(plannedWorkout.targetPaceSec)}/km`
-              : ""}
-          </p>
+          <div className="text-sm text-muted-foreground mt-1 space-y-1">
+            <p>
+              {t(`plans.workout.${plannedWorkout.workoutType}`)}
+              {plannedWorkout.targetDistanceKm
+                ? ` · ${t("workout.target")} ${
+                    plannedWorkout.targetDistanceKm
+                  }km`
+                : ""}
+              {plannedWorkout.targetPaceSec
+                ? ` · ${formatPace(plannedWorkout.targetPaceSec)}`
+                : ""}
+            </p>
+            {/* interval 結構 */}
+            {plannedWorkout.intervals && (
+              <p className="text-primary font-medium">
+                🔁 {formatInterval(plannedWorkout.intervals)}
+              </p>
+            )}
+            {/* warmup/cooldown 提示 */}
+            {(plannedWorkout.warmupKm || plannedWorkout.cooldownKm) && (
+              <p className="text-xs">
+                {t("plans.workout.warmup")} {plannedWorkout.warmupKm}km ·{" "}
+                {t("plans.workout.cooldown")} {plannedWorkout.cooldownKm}km
+              </p>
+            )}
+          </div>
         )}
       </div>
 

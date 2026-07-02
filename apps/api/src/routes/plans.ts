@@ -72,6 +72,9 @@ export async function plansRoutes(app: FastifyInstance) {
           targetPaceSec: w.targetPaceSec,
           targetDistanceKm: w.targetDistanceKm,
           targetDurationSec: w.targetDurationSec,
+          warmupKm: w.warmupKm,
+          cooldownKm: w.cooldownKm,
+          intervals: w.intervals ?? undefined,
           notes: w.notes,
         })),
       });

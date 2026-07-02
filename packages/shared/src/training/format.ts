@@ -1,3 +1,20 @@
+import type { IntervalStructure } from "./generatePlan.js";
+
+/** interval 結構 → 人類可讀字串,例:"8 × 1km, 3min 恢復" */
+export const formatInterval = (intervals: IntervalStructure): string => {
+  const { sets, setDistanceMeters, recoveryDurationSec, recoveryType } =
+    intervals;
+  // 距離:1000m 顯示 1km,否則顯示 Nm
+  const dist =
+    setDistanceMeters >= 1000
+      ? `${setDistanceMeters / 1000}km`
+      : `${setDistanceMeters}m`;
+  // 恢復時間:秒 → 分
+  const recoveryMin = Math.round(recoveryDurationSec / 60);
+  const recovery = recoveryType === "easy" ? "慢跑" : "休息";
+  return `${sets} × ${dist}・${recoveryMin}min ${recovery}`;
+};
+
 /**
  * 把秒數格式化為「H:MM:SS」或「MM:SS」字串。
  *

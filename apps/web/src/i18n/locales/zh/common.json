@@ -14,6 +14,18 @@
     "cancel": "取消",
     "edit": "編輯"
   },
+  "nav": {
+    "plans": "計畫",
+    "progress": "進度"
+  },
+  "progress": {
+    "title": "訓練進度",
+    "weeklyVolume": "每週訓練量 (km)",
+    "paceTrend": "配速趨勢",
+    "paceHint": "越上面越快",
+    "noData": "還沒有訓練紀錄",
+    "noPaceData": "還沒有配速資料"
+  },
   "plans": {
     "planNotFound": "找不到相關計畫，請重新確認",
     "createNew": "建立新計畫",
@@ -70,7 +82,8 @@
       "totalWeeks": "共 {{n}} 週",
       "logWorkout": "記錄",
       "target": "目標",
-      "actual": "實際"
+      "actual": "實際",
+      "completion": "完成率"
     },
     "workout": {
       "rest": "休息",
@@ -79,9 +92,9 @@
       "tempo": "Tempo",
       "marathon": "Marathon Pace",
       "interval": "Interval",
-      "race": "比賽日",
-      "title": "記錄訓練",
-      "target": "目標"
+      "warmup": "熱身",
+      "cooldown": "緩和",
+      "race": "比賽日"
     },
     "days": {
       "sun": "日",

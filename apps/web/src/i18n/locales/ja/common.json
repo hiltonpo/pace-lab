@@ -14,6 +14,18 @@
     "cancel": "キャンセル",
     "edit": "編集"
   },
+  "nav": {
+    "plans": "プラン",
+    "progress": "進捗"
+  },
+  "progress": {
+    "title": "トレーニング進捗",
+    "weeklyVolume": "週間走行距離 (km)",
+    "paceTrend": "ペース推移",
+    "paceHint": "上ほど速い",
+    "noData": "まだ記録がありません",
+    "noPaceData": "まだペースデータがありません"
+  },
   "plans": {
     "planNotFound": "計画が見つかりません。もう一度ご確認ください",
     "createNew": "新しい計画を作成",
@@ -70,7 +82,8 @@
       "totalWeeks": "全 {{n}} 週",
       "logWorkout": "記録",
       "target": "目標",
-      "actual": "実績"
+      "actual": "実績",
+      "completion": "達成率"
     },
     "workout": {
       "rest": "休息",
@@ -79,6 +92,8 @@
       "tempo": "Tempo",
       "marathon": "Marathon Pace",
       "interval": "Interval",
+      "warmup": "ウォームアップ",
+      "cooldown": "クールダウン",
       "race": "Race Day"
     },
     "days": {
