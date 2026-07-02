@@ -94,7 +94,7 @@ export const HomePage = () => {
             {plans.map((plan) => (
               <Link key={plan.id} to={`/plans/${plan.id}`}>
                 <Card className="hover:border-ring transition-colors cursor-pointer">
-                  <CardContent className="pt-6 flex items-center justify-between">
+                  <CardContent className="py-2 flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="font-medium">{plan.name}</p>
                       <p className="text-sm text-muted-foreground">
