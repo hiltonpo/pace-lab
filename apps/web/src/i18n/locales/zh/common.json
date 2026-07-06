@@ -83,7 +83,11 @@
       "logWorkout": "記錄",
       "target": "目標",
       "actual": "實際",
-      "completion": "完成率"
+      "completion": "完成率",
+      "mainSet": "主段",
+      "faster": "快",
+      "slower": "慢",
+      "onTarget": "達標"
     },
     "workout": {
       "rest": "休息",
@@ -114,8 +118,9 @@
       "distance": "距離 (km)",
       "duration": "時間",
       "durationHint": "格式：分:秒 或 時:分:秒（例 25:00、3:59:00）",
-      "duationError": "時間格式錯誤",
+      "durationError": "時間格式錯誤",
       "pace": "配速",
+      "paceError": "配速格式錯誤，例：4:32",
       "heartRate": "心率",
       "avgHr": "平均心率",
       "maxHr": "最大心率",
@@ -126,7 +131,10 @@
       "temperature": "溫度 (°C)",
       "notes": "備註",
       "submit": "記錄",
-      "submitting": "記錄中…"
+      "submitting": "記錄中…",
+      "mainSetPace": "間歇主段",
+      "mainSetPaceLabel": "主段平均配速",
+      "mainSetPaceHint": "只記快跑段平均（不含恢復），例 4:32。可從 Garmin Connect 過濾 Run 段取得"
     },
     "weather": {
       "sunny": "晴",

@@ -18,7 +18,7 @@ export function App() {
           <Route path="/workouts/:id/edit" element={<CreateWorkoutPage />} />
           <Route path="/progress" element={<ProgressPage />} />
         </Route>
-      </Routes>
+    </Routes>
     </BrowserRouter>
   );
 }

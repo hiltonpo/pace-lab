@@ -89,6 +89,7 @@ model ActualWorkout {
   actualDistanceKm  Float
   actualDurationSec Int
   actualPaceSec     Int?
+  mainSetPaceSec    Int?   // interval 主段平均配速（秒/km），只有 interval 用
   avgHeartRate      Int?
   maxHeartRate      Int?
   rpe               Int?

@@ -104,6 +104,14 @@ export const workoutObjectSchema = z.object({
     .optional()
     .nullable(),
   notes: z.string().max(1000).optional().nullable(),
+  /** interval 主段平均配速（秒/km），只有 interval 訓練填 */
+  mainSetPaceSec: z
+    .number({ message: "配速必須是數字" })
+    .int()
+    .positive({ message: "配速必須大於 0" })
+    .max(1800, { message: "配速不合理" }) // 30分/km 上限
+    .optional()
+    .nullable(),
 });
 
 export const createWorkoutInputSchema = workoutObjectSchema.refine(
@@ -169,6 +177,7 @@ export const actualWorkoutSchema = z.object({
   actualDistanceKm: z.number(),
   actualDurationSec: z.number().int(),
   actualPaceSec: z.number().int().nullable(),
+  mainSetPaceSec: z.number().int().nullable(),
   avgHeartRate: z.number().int().nullable(),
   maxHeartRate: z.number().int().nullable(),
   rpe: z.number().int().nullable(),

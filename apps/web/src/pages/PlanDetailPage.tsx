@@ -316,6 +316,37 @@ const Stat = ({ label, value }: { label: string; value: string }) => {
   );
 };
 
+/** 顯示實際配速 vs 目標的差異（快=綠、慢=橘）*/
+const PaceDiff = ({ actual, target }: { actual: number; target: number }) => {
+  const { t } = useTranslation();
+  const diff = actual - target; // 秒/km，負=比目標快
+  if (diff === 0) {
+    return (
+      <p className="text-[9px] text-muted-foreground">
+        {t("plans.detail.onTarget")}
+      </p>
+    );
+  }
+  const faster = diff < 0;
+  const absDiff = Math.abs(diff);
+  const mm = Math.floor(absDiff / 60);
+  const ss = absDiff % 60;
+  const diffStr = mm > 0 ? `${mm}:${String(ss).padStart(2, "0")}` : `${ss}s`;
+
+  return (
+    <p
+      className={`text-[9px] ${
+        faster
+          ? "text-muted-foreground" // 快 → 中性灰
+          : "text-orange-600 dark:text-orange-400" // 慢 → 橘
+      }`}
+    >
+      {faster ? "▼" : "▲"} {diffStr}{" "}
+      {faster ? t("plans.detail.faster") : t("plans.detail.slower")}
+    </p>
+  );
+};
+
 const WeekCard = ({
   weekNumber,
   workouts,
@@ -456,25 +487,48 @@ const WorkoutCell = ({
       {/* 已完成：實際數據 */}
       {isCompleted && actual && (
         <div className="mt-1 rounded bg-green-50 dark:bg-green-950/40 px-1.5 py-1 space-y-0.5">
-          <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
-            {t("plans.detail.actual")}
-          </span>
-          <p className="tabular-nums text-green-700 dark:text-green-300 font-semibold">
-            {actual.actualDistanceKm}km
-          </p>
-          {actual.actualPaceSec && (
-            <p className="tabular-nums text-green-600/80 dark:text-green-400/80">
-              {formatPace(actual.actualPaceSec)}
+          <div className="flex items-center justify-between">
+            <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
+              {t("plans.detail.actual")}
+            </span>
+            <Link
+              to={`/workouts/${actual.id}/edit`}
+              className="flex items-center gap-0.5 text-[9px] text-muted-foreground hover:text-primary"
+            >
+              <PencilLineIcon className="w-2.5 h-2.5" />
+              {t("common.edit")}
+            </Link>
+          </div>
+
+          {/* interval：主段配速 */}
+          {workout.workoutType === "interval" && actual.mainSetPaceSec ? (
+            <p className="tabular-nums text-green-700 dark:text-green-300 font-semibold">
+              {t("plans.detail.mainSet")} {formatPace(actual.mainSetPaceSec)}
             </p>
+          ) : (
+            /* 一般：距離 + 整場配速 */
+            <>
+              <p className="tabular-nums text-green-700 dark:text-green-300 font-semibold">
+                {actual.actualDistanceKm}km
+              </p>
+              {actual.actualPaceSec && (
+                <p className="tabular-nums text-green-600/80 dark:text-green-400/80">
+                  {formatPace(actual.actualPaceSec)}
+                </p>
+              )}
+            </>
           )}
-          {/* ← 編輯連結 */}
-          <Link
-            to={`/workouts/${actual.id}/edit`}
-            className="flex items-center justify-center gap-0.5 mt-1 rounded border border-muted-foreground/30 dark:border-muted-foreground/40 text-muted-foreground px-1.5 py-0.5 text-[9px] hover:border-primary/50 hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
-          >
-            <PencilLineIcon className="w-2.5 h-2.5" />
-            {t("common.edit")}
-          </Link>
+          {/* quality workout 才顯示配速差異 */}
+          {isHighIntensity && workout.targetPaceSec && (
+            <PaceDiff
+              actual={
+                workout.workoutType === "interval"
+                  ? actual.mainSetPaceSec ?? actual.actualPaceSec ?? 0
+                  : actual.actualPaceSec ?? 0
+              }
+              target={workout.targetPaceSec}
+            />
+          )}
         </div>
       )}
 

@@ -73,6 +73,8 @@ export function CreateWorkoutPage() {
   // 時間用字串輸入（"25:00"），送出前轉秒數
   const [durationStr, setDurationStr] = useState("");
   const [durationError, setDurationError] = useState<string | null>(null);
+  const [mainPaceStr, setMainPaceStr] = useState("");
+  const [mainPaceError, setMainPaceError] = useState<string | null>(null);
 
   const {
     register,
@@ -103,6 +105,7 @@ export function CreateWorkoutPage() {
         workoutType: existingWorkout.workoutType,
         actualDistanceKm: existingWorkout.actualDistanceKm,
         actualDurationSec: existingWorkout.actualDurationSec,
+        mainSetPaceSec: existingWorkout.mainSetPaceSec,
         avgHeartRate: existingWorkout.avgHeartRate,
         maxHeartRate: existingWorkout.maxHeartRate,
         rpe: existingWorkout.rpe,
@@ -113,6 +116,10 @@ export function CreateWorkoutPage() {
       });
       // 時間字串也要填回
       setDurationStr(formatDuration(existingWorkout.actualDurationSec));
+      // interval 主段配速填回
+      if (existingWorkout.mainSetPaceSec) {
+        setMainPaceStr(formatDuration(existingWorkout.mainSetPaceSec));
+      }
     }
   }, [existingWorkout, reset]);
 
@@ -121,6 +128,8 @@ export function CreateWorkoutPage() {
   const watchedWeather = watch("weather");
   const watchedFeeling = watch("feeling");
   const watchedRpe = watch("rpe");
+  const watchedType = watch("workoutType");
+  const isInterval = watchedType === "interval";
 
   // 即時配速預覽
   const pacePreview =
@@ -145,7 +154,26 @@ export function CreateWorkoutPage() {
       setDurationError(null);
     } catch {
       setValue("actualDurationSec", 0, { shouldValidate: true });
-      setDurationError(t("workout.form.duationError"));
+      setDurationError(t("workout.form.durationError"));
+    }
+  };
+
+  // 配速輸入處理
+  const handleMainPaceChange = (value: string) => {
+    setMainPaceStr(value);
+
+    if (value.trim() === "") {
+      setValue("mainSetPaceSec", null, { shouldValidate: true });
+      setMainPaceError(null);
+      return;
+    }
+
+    try {
+      const sec = parseDuration(value); // "4:32" → 272 秒/km
+      setValue("mainSetPaceSec", sec, { shouldValidate: true });
+      setMainPaceError(null);
+    } catch {
+      setMainPaceError(t("workout.form.paceError"));
     }
   };
 
@@ -265,6 +293,34 @@ export function CreateWorkoutPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* interval 主段配速（只有 interval 顯示）*/}
+        {isInterval && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                🔁 {t("workout.form.mainSetPace")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Label htmlFor="mainPace">
+                {t("workout.form.mainSetPaceLabel")}
+              </Label>
+              <Input
+                id="mainPace"
+                value={mainPaceStr}
+                onChange={(e) => handleMainPaceChange(e.target.value)}
+                placeholder="4:32"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("workout.form.mainSetPaceHint")}
+              </p>
+              {mainPaceError && (
+                <p className="text-sm text-destructive">{mainPaceError}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* 心率 */}
         <Card>

@@ -83,7 +83,11 @@
       "logWorkout": "記録",
       "target": "目標",
       "actual": "実績",
-      "completion": "達成率"
+      "completion": "達成率",
+      "mainSet": "主要区間",
+      "faster": "速い",
+      "slower": "遅い",
+      "onTarget": "目標達成"
     },
     "workout": {
       "rest": "休息",
@@ -114,7 +118,9 @@
       "distance": "距離 (km)",
       "duration": "時間",
       "durationHint": "形式：分:秒 または 時:分:秒（例 25:00、3:59:00）",
+      "durationError": "時間形式が正しくありません",
       "pace": "ペース",
+      "paceError": "ペース形式が正しくありません（例：4:32）",
       "heartRate": "心拍数",
       "avgHr": "平均心拍",
       "maxHr": "最大心拍",
@@ -125,7 +131,10 @@
       "temperature": "気温 (°C)",
       "notes": "メモ",
       "submit": "記録する",
-      "submitting": "記録中…"
+      "submitting": "記録中…",
+      "mainSetPace": "インターバル主要区間",
+      "mainSetPaceLabel": "主要区間の平均ペース",
+      "mainSetPaceHint": "疾走区間のみの平均（レスト除く）。例 4:32。Garmin Connect の Run 区間で確認可"
     },
     "weather": {
       "sunny": "晴れ",

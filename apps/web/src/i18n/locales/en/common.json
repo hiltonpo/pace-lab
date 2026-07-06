@@ -83,7 +83,11 @@
       "logWorkout": "Log",
       "target": "Target",
       "actual": "Actual",
-      "completion": "completion"
+      "completion": "completion",
+      "mainSet": "Main",
+      "faster": "faster",
+      "slower": "slower",
+      "onTarget": "on target"
     },
     "workout": {
       "rest": "Rest",
@@ -114,7 +118,9 @@
       "distance": "Distance (km)",
       "duration": "Duration",
       "durationHint": "Format: mm:ss or h:mm:ss (e.g., 25:00, 3:59:00)",
+      "durationError": "Invalid time format",
       "pace": "Pace",
+      "paceError": "Invalid pace format, e.g. 4:32",
       "heartRate": "Heart Rate",
       "avgHr": "Avg HR",
       "maxHr": "Max HR",
@@ -125,7 +131,10 @@
       "temperature": "Temperature (°C)",
       "notes": "Notes",
       "submit": "Log",
-      "submitting": "Logging..."
+      "submitting": "Logging...",
+      "mainSetPace": "Interval Main Set",
+      "mainSetPaceLabel": "Main Set Avg Pace",
+      "mainSetPaceHint": "Fast reps only, excluding recovery. e.g. 4:32. Available in Garmin Connect (filter Run steps)"
     },
     "weather": {
       "sunny": "Sunny",
