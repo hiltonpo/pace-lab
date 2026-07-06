@@ -598,3 +598,43 @@ RPE 加顏色漸層（綠→黃→橘→紅）讓強度高低一眼可辨。
 ### 資料庫：schema 改動不回填舊資料
 
 migration 加欄位只改「表結構」，**不回填舊 row**——舊資料的新欄位是 null。開發階段測新欄位要「建新資料」，不是看舊資料。真實環境要回填得寫 data migration 腳本。
+
+---
+
+## Sprint 4 補充
+
+### 條件式表單（依 workoutType 顯示不同欄位）
+
+同一個表單，根據當前類型顯示不同欄位。用 `watch("workoutType")` 判斷（涵蓋「計畫帶來的類型」與「使用者自己選的」兩種情境）：
+
+```tsx
+const isInterval = watch("workoutType") === "interval";
+
+{isInterval && (
+  <Card>{/* interval 專用：主段平均配速輸入 */}</Card>
+)}
+```
+
+interval 顯示主段配速欄位、其他類型不顯示——表單分歧的核心是「條件渲染」。
+
+### 配速輸入的進出對稱
+
+輸入用 `parseDuration`（"4:32" → 272 秒）、填回（編輯模式）就該用 `formatDuration`（272 → "4:32"）。**不要用 `formatPace` 填回**——它帶單位（"4:32/km"），填進輸入框會多單位、再送出時解析失敗。進（parse）出（format）要對稱、格式一致。
+
+### 相似 handler 該不該合併
+
+`handleDurationChange` 與 `handleMainPaceChange` 結構幾乎一樣，但**不建議合併成通用 handler**——合併要傳 4~6 個參數（state setter、欄位名、空值、錯誤 setter…），呼叫端變得又臭又長，反而更難讀。
+
+判斷準則：抽出「純邏輯」（如解析 mm:ss）可共用；深綁元件 state 的部分（哪個欄位、哪個 setter）保留各自處理。DRY 的目的是好維護，合併後更難懂就別合併。「相似」不等於「該共用」——要看是否同一概念。
+
+### 配色語意要單一
+
+Sprint 3 用綠色代表「完成」（打勾、實際框）。Sprint 4 若 PaceDiff 的「快」也用綠，同一區塊兩種綠、語意衝突（完成？表現好？）。解法：完成保留綠（已是全 app 語意，動它連鎖影響），PaceDiff 改配色——「慢」用橘（警示沒達標）、「快/達標」用中性色（達標是基本、不需慶祝）。一種顏色一種意義。
+
+### 依產品性質決定功能範圍
+
+PaceDiff（配速差異）只用在 quality workout（tempo/marathon/interval），不用在 easy/long。因為在 Jack Daniels 訓練法裡，quality 的配速是「必須命中的目標」（達標與否重要），而 easy/long 的配速是「上限」（跑更慢是對的）——對 easy 顯示「慢了 30 秒」會誤導。功能範圍要貼合產品的訓練方法論，不是「有資料就都顯示」。
+
+### 元件外的 i18n
+
+定義在元件外的「元件」（大寫、回 JSX，如 `PaceDiff` / `PaceTooltip`）可以自己呼叫 `useTranslation()`（React 把它當元件、允許用 hook）。純函式（回值、非 JSX）則不能用 hook——需要翻譯時把 `t` 當參數傳入、或回傳 i18n key 讓元件內再翻譯。判斷：是不是 React 元件？是 → 自己用 hook；不是 → 傳參數或回 key。

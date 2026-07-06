@@ -72,6 +72,7 @@ export async function workoutsRoutes(app: FastifyInstance) {
         actualDistanceKm: input.actualDistanceKm,
         actualDurationSec: input.actualDurationSec,
         actualPaceSec,
+        mainSetPaceSec: input.mainSetPaceSec ?? null,
         avgHeartRate: input.avgHeartRate ?? null,
         maxHeartRate: input.maxHeartRate ?? null,
         rpe: input.rpe ?? null,
@@ -216,6 +217,8 @@ export async function workoutsRoutes(app: FastifyInstance) {
       const duration = input.actualDurationSec ?? existing.actualDurationSec;
       data.actualPaceSec = calcPaceSec(distance, duration);
     }
+    if (input.mainSetPaceSec !== undefined)
+      data.mainSetPaceSec = input.mainSetPaceSec;
 
     const updated = await prisma.actualWorkout.update({
       where: { id: paramsResult.data.id },

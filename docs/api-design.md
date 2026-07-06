@@ -325,3 +325,27 @@ if (from || to) {
 ### 使用者輸入驗證訊息中文化
 
 會被使用者看到的欄位（距離、時間、心率、溫度、RPE）的 `.min()` / `.max()` 都帶自訂中文 message；按鈕選的欄位（weather / feeling enum）的 message 只是後端防禦（前端選按鈕不會觸發），不用講究。
+
+## Sprint 4 新增慣例
+
+### interval 專用欄位:mainSetPaceSec
+
+`ActualWorkout` 加 `mainSetPaceSec`（主段平均配速），解決 interval 配速失真：
+
+```
+interval 8×1km @ 4:29 + 恢復慢跑 + warmup/cooldown
+  總距離 12km、總時間 81 分 → actualPaceSec = 6:45/km（被恢復稀釋、失真）
+  mainSetPaceSec = 4:32/km（只算快跑段，反映真實間歇強度）
+```
+
+- interval 紀錄兩個都存：`actualPaceSec`（整場、反映總消耗）+ `mainSetPaceSec`（主段、反映強度）
+- 非 interval 的 `mainSetPaceSec` 是 null（不適用）
+- 資料來源：跑者可在 Garmin Connect 過濾 Run 段取得主段平均
+
+### schema 疊加、不改舊欄位
+
+Sprint 4 只「加」欄位（mainSetPaceSec），不動 Sprint 3 的欄位——同 Sprint 3 加 interval 結構的疊加原則。未來若做「每趟配速」（做法 B），再加 `lapPaces Json?`，一樣疊加。
+
+### 相似邏輯但不共用:配速與時間解析
+
+interval 主段配速輸入（"4:32"）與時間輸入（"25:00"）格式相同（mm:ss），共用 `parseDuration` 解析；但**錯誤訊息分開**（配速用 `paceError`、時間用 `durationError`），因為使用者情境不同（範例、欄位名不同）。相似邏輯可共用，語意不同的訊息該分開。

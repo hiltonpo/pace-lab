@@ -48,6 +48,14 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - Warm-up / cool-down and per-type training notes
 - Chinese validation messages; cross-field validation (max HR ≥ avg HR)
 
+### Sprint 4: Interval-Specific Pace Logging
+
+- Log main-set average pace for interval workouts (`mainSetPaceSec`)
+- Solves pace distortion: interval "total distance ÷ total time" is diluted by recovery jogs and warm-up; main-set pace reflects true interval intensity
+- Conditional form: interval workouts show a main-set pace field, others don't
+- Main-set actual vs target pace comparison with diff indicator (faster / slower)
+- Pace-diff shown for quality workouts only (tempo / marathon / interval), where hitting target pace matters in the Daniels method
+
 ## Tech Stack
 
 ### Frontend
@@ -260,15 +268,16 @@ Sprint 2 過程中也碰到 pnpm 嚴格依賴的雷（peer dependency 如 `tslib
 - [x] Sprint 1.5: UI foundation (Tailwind v4, shadcn, dark mode, i18n)
 - [x] Sprint 2: Training plan generator (Jack Daniels VDOT formula)
 - [x] Sprint 3: Workout logging + progress charts
-- [ ] Sprint 4: PWA support, offline-first
+- [x] Sprint 4: Interval-specific pace logging
 - [ ] Sprint 5: Personal records, plan adjustment
-- [ ] Sprint 6: Polish + demo video
+- [ ] Sprint 6: PWA support, offline-first
+- [ ] Sprint 6+: Garmin Connect API auto-sync
 
 ### Sprint 4+ Backlog (ideas parked)
 
-- Interval-specific logging format: record the main-set pace only (excluding recovery / warm-up), to avoid diluting interval pace with "total distance ÷ total time"
 - Edit plan / delete a single planned workout (will trigger `ActualWorkout` SetNull)
 - Per-rep interval logging (surface pace fade across reps as a fatigue indicator)
+- Garmin Connect API auto-sync (import pace / HR / per-lap data automatically)
 
 ## License
 

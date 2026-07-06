@@ -30,7 +30,8 @@ apps/api/
 │   └── migrations/           ← Prisma 自動生成的 SQL migration 檔
 │       ├── 20260525_init/                              ← Sprint 1: User + Session
 │       ├── 20260605_add_training_plans_and_workouts/   ← Sprint 2: TrainingPlan + PlannedWorkout
-│       └── 20260625_add_actual_workouts.../            ← Sprint 3: ActualWorkout + interval 結構
+│       ├── 20260625_add_actual_workouts.../            ← Sprint 3: ActualWorkout + interval 結構
+│       └── 20260706_add_main_set_pace/                 ← Sprint 4: interval 主段平均配速
 ├── src/
 │   ├── auth/                 ← 認證相關
 │   │   ├── cookie.ts         ← cookie 屬性、跨網域設定
@@ -213,6 +214,14 @@ import {
   FEELING_OPTIONS,
 } from "@pace-lab/shared";
 ```
+
+### Sprint 4 補充
+
+Sprint 4 沒有新增大量 import，主要是資料欄位與條件式 UI：
+
+- `ActualWorkout.mainSetPaceSec`（interval 主段平均配速，避免「總距離÷總時間」把間歇配速稀釋失真）
+- `CreateWorkoutPage` 依 `workoutType` 條件顯示欄位（interval 才顯示主段配速輸入）
+- `PaceDiff` 元件（顯示實際 vs 目標配速差異，用於 quality workout）
 
 ## 文件：`docs/`
 
