@@ -9,6 +9,7 @@ import cookie from "@fastify/cookie";
 import { authRoutes } from "./routes/auth.js";
 import { plansRoutes } from "./routes/plans.js";
 import { workoutsRoutes } from "./routes/workouts.js";
+import { prRoutes } from "./routes/pr.js";
 
 const app = Fastify({
   logger: {
@@ -32,6 +33,7 @@ await app.register(cookie);
 await app.register(authRoutes);
 await app.register(plansRoutes);
 await app.register(workoutsRoutes);
+await app.register(prRoutes);
 
 app.get("/api/health", async () => {
   await prisma.$queryRaw`SELECT 1`;

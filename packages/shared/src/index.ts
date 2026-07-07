@@ -14,3 +14,4 @@ export type {
   PlanTemplate,
 } from "./training/templates/types.js";
 export * from "./training/planSchemas.js";
+export * from "./training/prSchemas.js";
