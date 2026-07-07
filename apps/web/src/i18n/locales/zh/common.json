@@ -16,7 +16,8 @@
   },
   "nav": {
     "plans": "計畫",
-    "progress": "進度"
+    "progress": "進度",
+    "prs": "個人紀錄"
   },
   "progress": {
     "title": "訓練進度",
@@ -151,5 +152,65 @@
       "tired": "累",
       "exhausted": "很累"
     }
+  },
+  "pr": {
+    "title": "個人紀錄",
+    "add": "新增紀錄",
+    "empty": "還沒有個人紀錄",
+    "form": {
+      "distance": "距離",
+      "time": "成績",
+      "timeHint": "格式：時:分:秒 或 分:秒（例 4:32:00）",
+      "timeError": "成績格式錯誤",
+      "dateError": "請選擇達成日期",
+      "date": "達成日期",
+      "note": "備註",
+      "save": "儲存",
+      "saving": "儲存中…"
+    },
+    "history": {
+      "title": "進步曲線",
+      "needMore": "同一距離記錄 2 次以上，即可看到進步曲線"
+    }
+  },
+  "errors": {
+    "distance": {
+      "required": "請輸入距離",
+      "positive": "距離必須大於 0",
+      "max": "距離不可超過 500km"
+    },
+    "time": {
+      "required": "請輸入時間",
+      "positive": "時間必須大於 0",
+      "max": "時間不可超過 24 小時"
+    },
+    "pace": {
+      "number": "配速必須是數字",
+      "positive": "配速必須大於 0",
+      "unreasonable": "配速不合理"
+    },
+    "avgHr": {
+      "number": "平均心率必須是數字",
+      "integer": "平均心率必須是整數"
+    },
+    "maxHr": {
+      "number": "最大心率必須是數字",
+      "integer": "最大心率必須是整數"
+    },
+    "hr": {
+      "range": "心率範圍是 30-250",
+      "order": "最大心率不應低於平均心率"
+    },
+    "rpe": {
+      "number": "RPE 必須是數字",
+      "integer": "RPE 必須是整數",
+      "range": "RPE 範圍是 1-10（1=非常輕鬆，10=全力）"
+    },
+    "temp": {
+      "number": "溫度必須是數字",
+      "range": "溫度範圍是 -50 至 60°C"
+    },
+    "weather": { "invalid": "天氣選項無效" },
+    "feeling": { "invalid": "體感選項無效" }
   }
 }

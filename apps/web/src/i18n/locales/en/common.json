@@ -16,7 +16,8 @@
   },
   "nav": {
     "plans": "Plans",
-    "progress": "Progress"
+    "progress": "Progress",
+    "prs": "Records"
   },
   "progress": {
     "title": "Training Progress",
@@ -151,5 +152,65 @@
       "tired": "Tired",
       "exhausted": "Exhausted"
     }
+  },
+  "pr": {
+    "title": "Personal Records",
+    "add": "Add Record",
+    "empty": "No personal records yet",
+    "form": {
+      "distance": "Distance",
+      "time": "Time",
+      "timeHint": "Format: h:mm:ss or mm:ss (e.g. 4:32:00)",
+      "timeError": "Invalid time format, e.g. 4:32:00",
+      "dateError": "Please select a date",
+      "date": "Date achieved",
+      "note": "Note",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "history": {
+      "title": "Progress Trend",
+      "needMore": "Log the same distance 2+ times to see your trend"
+    }
+  },
+  "errors": {
+    "distance": {
+      "required": "Please enter distance",
+      "positive": "Distance must be greater than 0",
+      "max": "Distance cannot exceed 500km"
+    },
+    "time": {
+      "required": "Please enter time",
+      "positive": "Time must be greater than 0",
+      "max": "Time cannot exceed 24 hours"
+    },
+    "pace": {
+      "number": "Pace must be a number",
+      "positive": "Pace must be greater than 0",
+      "unreasonable": "Pace is unreasonable"
+    },
+    "avgHr": {
+      "number": "Average HR must be a number",
+      "integer": "Average HR must be an integer"
+    },
+    "maxHr": {
+      "number": "Max HR must be a number",
+      "integer": "Max HR must be an integer"
+    },
+    "hr": {
+      "range": "Heart rate must be 30-250",
+      "order": "Max HR cannot be lower than average HR"
+    },
+    "rpe": {
+      "number": "RPE must be a number",
+      "integer": "RPE must be an integer",
+      "range": "RPE must be 1-10 (1=very easy, 10=max effort)"
+    },
+    "temp": {
+      "number": "Temperature must be a number",
+      "range": "Temperature must be -50 to 60°C"
+    },
+    "weather": { "invalid": "Invalid weather option" },
+    "feeling": { "invalid": "Invalid feeling option" }
   }
 }

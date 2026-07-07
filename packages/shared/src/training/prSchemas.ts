@@ -5,11 +5,11 @@ import { raceTypeSchema } from "./raceType.js";
 export const createPRInputSchema = z.object({
   distance: raceTypeSchema,
   timeSec: z
-    .number({ message: "請輸入成績" })
+    .number({ message: "errors.time.required" })
     .int()
-    .positive({ message: "成績必須大於 0" })
-    .max(86400, { message: "成績不可超過 24 小時" }),
-  date: z.string().datetime(),
+    .positive({ message: "errors.time.positive" })
+    .max(86400, { message: "errors.time.max" }),
+  date: z.string().min(1).datetime(),
   note: z.string().max(200).optional().nullable(),
 });
 export type CreatePRInput = z.infer<typeof createPRInputSchema>;

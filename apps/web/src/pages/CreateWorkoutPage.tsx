@@ -251,7 +251,7 @@ export function CreateWorkoutPage() {
               />
               {errors.actualDistanceKm && (
                 <p className="text-sm text-destructive">
-                  {errors.actualDistanceKm.message}
+                  {t(errors.actualDistanceKm.message ?? "")}
                 </p>
               )}
             </div>
@@ -268,14 +268,14 @@ export function CreateWorkoutPage() {
               <p className="text-xs text-muted-foreground">
                 {t("workout.form.durationHint")}
               </p>
-              {/* 格式錯誤（parseDuration） */}
+              {/* 格式錯誤 */}
               {durationError && (
                 <p className="text-sm text-destructive">{durationError}</p>
               )}
               {/* 數值錯誤（Zod），但格式沒錯時才顯示，避免兩個一起跳 */}
               {!durationError && errors.actualDurationSec && (
                 <p className="text-sm text-destructive">
-                  {errors.actualDurationSec.message}
+                  {t(errors.actualDurationSec.message ?? "")}
                 </p>
               )}
             </div>
@@ -342,7 +342,7 @@ export function CreateWorkoutPage() {
               />
               {errors.avgHeartRate && (
                 <p className="text-sm text-destructive">
-                  {errors.avgHeartRate.message}
+                  {t(errors.avgHeartRate.message ?? "")}
                 </p>
               )}
             </div>
@@ -356,7 +356,7 @@ export function CreateWorkoutPage() {
               />
               {errors.maxHeartRate && (
                 <p className="text-sm text-destructive">
-                  {errors.maxHeartRate.message}
+                  {t(errors.maxHeartRate.message ?? "")}
                 </p>
               )}
             </div>
@@ -457,7 +457,7 @@ export function CreateWorkoutPage() {
             </div>
             {errors.temperatureC && (
               <p className="text-sm text-destructive">
-                {errors.temperatureC.message}
+                {t(errors.temperatureC.message ?? "")}
               </p>
             )}
           </CardContent>

@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-
 export function Layout() {
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
@@ -46,6 +45,16 @@ export function Layout() {
               }
             >
               {t("nav.progress")}
+            </NavLink>
+            <NavLink
+              to="/prs"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground transition-colors"
+              }
+            >
+              {t("nav.prs")}
             </NavLink>
           </nav>
 

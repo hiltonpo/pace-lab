@@ -26,27 +26,27 @@ export const workoutObjectSchema = z.object({
   date: z.string().datetime(),
   workoutType: z.string().min(1),
   actualDistanceKm: z
-    .number({ message: "請輸入距離" })
-    .positive({ message: "距離必須大於 0" })
-    .max(500, { message: "距離不可超過 500km" }),
+    .number({ message: "errors.distance.required" })
+    .positive({ message: "errors.distance.positive" })
+    .max(500, { message: "errors.distance.max" }),
   actualDurationSec: z
-    .number({ message: "請輸入時間" })
+    .number({ message: "errors.time.required" })
     .int()
-    .positive({ message: "時間必須大於 0" })
-    .max(86400, { message: "時間不可超過 24 小時" }),
+    .positive({ message: "errors.time.positive" })
+    .max(86400, { message: "errors.time.max" }),
   // 以下全可選
   avgHeartRate: z
-    .number({ message: "平均心率必須是數字" })
-    .int({ message: "平均心率必須是整數" })
-    .min(30, { message: "平均心率範圍是 30-250" })
-    .max(250, { message: "平均心率範圍是 30-250" })
+    .number({ message: "errors.avgHr.number" })
+    .int({ message: "errors.avgHr.integer" })
+    .min(30, { message: "errors.hr.range" })
+    .max(250, { message: "errors.hr.range" })
     .optional()
     .nullable(),
   maxHeartRate: z
-    .number({ message: "最大心率必須是數字" })
-    .int({ message: "最大心率必須是整數" })
-    .min(30, { message: "最大心率範圍是 30-250" })
-    .max(250, { message: "最大心率範圍是 30-250" })
+    .number({ message: "errors.maxHr.number" })
+    .int({ message: "errors.maxHr.integer" })
+    .min(30, { message: "errors.hr.range" })
+    .max(250, { message: "errors.hr.range" })
     .optional()
     .nullable(),
   /**
@@ -60,10 +60,10 @@ export const workoutObjectSchema = z.object({
    * 10:  全力衝刺
    */
   rpe: z
-    .number({ message: "RPE 必須是數字" })
-    .int({ message: "RPE 必須是整數" })
-    .min(1, { message: "RPE 範圍是 1-10（1=非常輕鬆，10=全力）" })
-    .max(10, { message: "RPE 範圍是 1-10（1=非常輕鬆，10=全力）" })
+    .number({ message: "errors.rpe.number" })
+    .int({ message: "errors.rpe.integer" })
+    .min(1, { message: "errors.rpe.range" })
+    .max(10, { message: "errors.rpe.range" })
     .optional()
     .nullable(),
   /**
@@ -77,16 +77,13 @@ export const workoutObjectSchema = z.object({
    * windy:  強風
    */
   weather: z
-    .enum(WEATHER_OPTIONS, {
-      message:
-        "weather 必須是：sunny / cloudy / rainy / hot / cold / windy 之一",
-    })
+    .enum(WEATHER_OPTIONS, { message: "errors.weather.invalid" })
     .optional()
     .nullable(),
   temperatureC: z
-    .number({ message: "溫度必須是數字" })
-    .min(-50, { message: "溫度範圍是 -50 至 60°C" })
-    .max(60, { message: "溫度範圍是 -50 至 60°C" })
+    .number({ message: "errors.temp.number" })
+    .min(-50, { message: "errors.temp.range" })
+    .max(60, { message: "errors.temp.range" })
     .optional()
     .nullable(),
   /**
@@ -98,18 +95,16 @@ export const workoutObjectSchema = z.object({
    * exhausted: 非常累，很勉強
    */
   feeling: z
-    .enum(FEELING_OPTIONS, {
-      message: "feeling 必須是：great / good / normal / tired / exhausted 之一",
-    })
+    .enum(FEELING_OPTIONS, { message: "errors.feeling.invalid" })
     .optional()
     .nullable(),
   notes: z.string().max(1000).optional().nullable(),
   /** interval 主段平均配速（秒/km），只有 interval 訓練填 */
   mainSetPaceSec: z
-    .number({ message: "配速必須是數字" })
+    .number({ message: "errors.pace.number" })
     .int()
-    .positive({ message: "配速必須大於 0" })
-    .max(1800, { message: "配速不合理" }) // 30分/km 上限
+    .positive({ message: "errors.pace.positive" })
+    .max(1800, { message: "errors.pace.unreasonable" })
     .optional()
     .nullable(),
 });
@@ -122,7 +117,7 @@ export const createWorkoutInputSchema = workoutObjectSchema.refine(
     return true; // 任一沒填就不檢查
   },
   {
-    message: "最大心率不應低於平均心率",
+    message: "errors.hr.order",
     path: ["maxHeartRate"],
   }
 );
@@ -144,7 +139,7 @@ export const updateWorkoutInputSchema = workoutObjectSchema.partial().refine(
     return true; // 任一沒填就不檢查
   },
   {
-    message: "最大心率不應低於平均心率",
+    message: "errors.hr.order",
     path: ["maxHeartRate"],
   }
 );

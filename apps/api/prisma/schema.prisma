@@ -18,7 +18,8 @@ model User {
   updatedAt       DateTime        @updatedAt
   sessions        Session[]
   trainingPlans   TrainingPlan[]
-  actualWorkouts ActualWorkout[]   
+  actualWorkouts  ActualWorkout[]
+  personalRecords PersonalRecord[]    
 
   @@map("users")
 }
@@ -109,4 +110,21 @@ model ActualWorkout {
   @@index([planId])
   @@index([plannedWorkoutId])
   @@map("actual_workouts")
+}
+
+model PersonalRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  distance  String   // "5k" | "10k" | "half" | "full"
+  timeSec   Int      // 成績（秒）
+  date      DateTime // 達成日期
+  note      String?  // 備註（哪場比賽等）
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, distance])
+  @@map("personal_records")
 }

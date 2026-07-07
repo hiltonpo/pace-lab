@@ -5,6 +5,7 @@ import { CreatePlanPage } from "./pages/CreatePlanPage";
 import { PlanDetailPage } from "./pages/PlanDetailPage";
 import { CreateWorkoutPage } from "./pages/CreateWorkoutPage";
 import { ProgressPage } from "./pages/ProgressPage";
+import { PRPage } from "./pages/PRPage";
 
 export function App() {
   return (
@@ -17,8 +18,9 @@ export function App() {
           <Route path="/workouts/new" element={<CreateWorkoutPage />} />
           <Route path="/workouts/:id/edit" element={<CreateWorkoutPage />} />
           <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/prs" element={<PRPage />} />
         </Route>
-    </Routes>
+      </Routes>
     </BrowserRouter>
   );
 }
