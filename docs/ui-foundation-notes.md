@@ -638,3 +638,50 @@ PaceDiff（配速差異）只用在 quality workout（tempo/marathon/interval）
 ### 元件外的 i18n
 
 定義在元件外的「元件」（大寫、回 JSX，如 `PaceDiff` / `PaceTooltip`）可以自己呼叫 `useTranslation()`（React 把它當元件、允許用 hook）。純函式（回值、非 JSX）則不能用 hook——需要翻譯時把 `t` 當參數傳入、或回傳 i18n key 讓元件內再翻譯。判斷：是不是 React 元件？是 → 自己用 hook；不是 → 傳參數或回 key。
+
+---
+
+## Sprint 5 補充
+
+### TanStack Query（真正理解）
+
+第一次深入理解 TanStack Query 的三個核心：
+
+- **useQuery（讀）**：給 `queryKey` + `queryFn`，自動回傳 `data` / `isLoading` / `error`，不用自己 useState 管
+- **useMutation（寫）**：給 `mutationFn`，用 `.mutate(data)` 觸發，有 `isPending` / `isError`
+- **invalidateQueries（寫完）**：`onSuccess` 裡讓相關 queryKey 失效 → 自動重抓 → 畫面更新，不用手動 setState
+
+```typescript
+const useCreatePR = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createPR,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prs"] }),
+  });
+};
+```
+
+`queryKey` 是快取的身分證：讀用它快取、寫完用它 invalidate，兩邊同一個 key 串起來。對比 Vue Pinia 的手動狀態管理，TanStack 專為「伺服器資料」優化（快取、自動重抓、去重）。
+
+### 折線圖的邊緣情況
+
+進步曲線（同距離多筆、按日期排）要處理同日期兩筆——同 X 軸位置兩個點會讓線打結。解法：`historyByDistance` 內同日期只留最快（Map 以 yyyy-mm-dd 為 key 取 timeSec 最小）。呈現層先清理資料再畫圖，避免圖形怪異。
+
+### 依產品性質選功能（歷史曲線 vs 強弱分析）
+
+PR 原本想做兩種分析，二擇一時依產品性質選「歷史曲線」而非「強弱分析」：
+
+- 產品核心是「訓練追蹤、看進步」→ 曲線直接回答「我變快了嗎」
+- 目標客群主攻單一距離（會累積同距離多筆）→ 曲線有資料；強弱分析需多距離、常缺資料
+- 歷史曲線只比同距離時間、不碰 VDOT → 避開 VDOT 對長距離失真的問題
+- 複用 Sprint 3 的 Recharts → 技術成本低
+
+功能取捨要看產品定位與客群行為，不是「哪個聽起來厲害」。
+
+### 日期必填：defaultValue 不能給值
+
+要讓日期「必填、沒選擋下」，defaultValue 必須是空字串——若預設今天，等於「沒選也有值」，驗證擋不下。必填的本質是「沒填要能擋」，預設值會破壞這點。date input 綁 `value={iso.slice(0,10)}`（ISO → yyyy-mm-dd），空值時給 `""` 避免 `new Date("")` 拋錯。
+
+### 錯誤訊息 i18n：t() 吃 optional 的處理
+
+`errors.X.message` 型別是 `string | undefined`，但 `t()` 只吃 string。用 `t(errors.X.message ?? "")` 補 fallback——不用 `!` 斷言（有風險），`?? ""` 較安全（undefined 時傳空字串）。

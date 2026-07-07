@@ -31,7 +31,8 @@ apps/api/
 │       ├── 20260525_init/                              ← Sprint 1: User + Session
 │       ├── 20260605_add_training_plans_and_workouts/   ← Sprint 2: TrainingPlan + PlannedWorkout
 │       ├── 20260625_add_actual_workouts.../            ← Sprint 3: ActualWorkout + interval 結構
-│       └── 20260706_add_main_set_pace/                 ← Sprint 4: interval 主段平均配速
+│       ├── 20260706_add_main_set_pace/                 ← Sprint 4: interval 主段平均配速
+│       └── 20260707_add_personal_records/              ← Sprint 5: PersonalRecord
 ├── src/
 │   ├── auth/                 ← 認證相關
 │   │   ├── cookie.ts         ← cookie 屬性、跨網域設定
@@ -40,7 +41,8 @@ apps/api/
 │   ├── routes/               ← API 路由
 │   │   ├── auth.ts           ← /api/auth/* (OAuth flow、logout、/api/me)
 │   │   ├── plans.ts          ← /api/plans (CRUD)
-│   │   └── workouts.ts       ← /api/workouts (CRUD + PATCH + 篩選)  ← Sprint 3
+│   │   ├── workouts.ts       ← /api/workouts (CRUD + PATCH + 篩選)  ← Sprint 3
+│   │   └── pr.ts             ← /api/prs (個人紀錄 CRUD)  ← Sprint 5
 │   ├── db.ts                 ← Prisma client 實體（單一來源）
 │   └── index.ts              ← Fastify app 啟動入口、CORS、plugin 註冊
 ├── .env                      ← 本地環境變數（不 commit）
@@ -68,7 +70,8 @@ apps/web/
 │   │   ├── CreatePlanPage.tsx
 │   │   ├── PlanDetailPage.tsx    ← 含完成狀態、完成率、interval 顯示（Sprint 3 擴充）
 │   │   ├── CreateWorkoutPage.tsx ← 記錄/編輯訓練共用（Sprint 3）
-│   │   └── ProgressPage.tsx      ← 訓練量/配速趨勢圖（Sprint 3）
+│   │   ├── ProgressPage.tsx      ← 訓練量/配速趨勢圖（Sprint 3）
+│   │   └── PRPage.tsx            ← 個人紀錄 + 進步曲線（Sprint 5）
 │   ├── components/
 │   │   ├── ui/               ← shadcn 元件（不放業務邏輯）
 │   │   │   ├── button.tsx
@@ -81,6 +84,7 @@ apps/web/
 │   │   ├── useMe.ts          ← 取得當前使用者 + 登入登出
 │   │   ├── usePlans.ts       ← 計畫列表 / 詳情 / 刪除
 │   │   ├── useWorkouts.ts    ← 訓練紀錄 CRUD + 編輯（Sprint 3）
+│   │   ├── usePRs.ts         ← 個人紀錄 CRUD（Sprint 5）
 │   │   ├── useTheme.ts       ← dark mode 切換
 │   │   └── useLocale.ts      ← 語言切換
 │   ├── i18n/                 ← 多語言設定
@@ -93,6 +97,7 @@ apps/web/
 │   │   ├── api.ts            ← me / logout API
 │   │   ├── plansApi.ts       ← 計畫相關 API
 │   │   ├── workoutsApi.ts    ← 訓練紀錄 API（Sprint 3）
+│   │   ├── prApi.ts          ← 個人紀錄 API（Sprint 5）
 │   │   └── utils.ts          ← shadcn 的 cn() 函式
 │   ├── App.tsx               ← Router 設定（BrowserRouter + Routes）
 │   ├── main.tsx              ← React 入口、QueryClientProvider 等 wrap
@@ -129,6 +134,7 @@ packages/shared/
 │   │   ├── format.ts         ← formatDuration/formatPace/parseDuration/formatInterval（Sprint 3 加 formatInterval）
 │   │   ├── planSchemas.ts    ← 計畫 Zod schemas（Sprint 3 加 interval/warmup/cooldown response 欄位）
 │   │   ├── workoutSchemas.ts ← 訓練紀錄 Zod schemas + WEATHER/FEELING_OPTIONS（Sprint 3）
+│   │   ├── prSchemas.ts      ← 個人紀錄 Zod schemas（Sprint 5，distance 沿用 raceType）
 │   │   ├── generatePlan.ts   ← 計畫產生器（Sprint 3 加 interval 結構、warmup/cooldown、notes）
 │   │   ├── templates/
 │   │   │   ├── types.ts                 ← WorkoutTemplate、WeekTemplate 型別
@@ -219,9 +225,28 @@ import {
 
 Sprint 4 沒有新增大量 import，主要是資料欄位與條件式 UI：
 
-- `ActualWorkout.mainSetPaceSec`（interval 主段平均配速，避免「總距離÷總時間」把間歇配速稀釋失真）
+- `ActualWorkout.mainSetPaceSec`（interval 主段平均配速，避免「總距離 ÷ 總時間」把間歇配速稀釋失真）
 - `CreateWorkoutPage` 依 `workoutType` 條件顯示欄位（interval 才顯示主段配速輸入）
 - `PaceDiff` 元件（顯示實際 vs 目標配速差異，用於 quality workout）
+
+### Sprint 5 補充
+
+```typescript
+import {
+  // Types
+  CreatePRInput,
+  UpdatePRInput,
+  PersonalRecordResponse,
+
+  // Zod schemas
+  createPRInputSchema,
+  updatePRInputSchema,
+} from "@pace-lab/shared";
+```
+
+- PersonalRecord：個人紀錄（distance 沿用 raceType 命名、可對照計畫目標）
+- distance / RACE_DISTANCE_KM 沿用既有 raceType，不另立命名
+- 錯誤訊息 i18n 化：所有 schema 的 message 改存 i18n key（`errors.*`），前端 `t(errors.X.message ?? "")` 翻譯，切語言時錯誤訊息跟著變
 
 ## 文件：`docs/`
 
@@ -260,7 +285,8 @@ docs/
 | 加環境變數（前端）       | `apps/web/.env` + `.env.example` + `vite-env.d.ts` 加型別 + Vercel Variables |
 | 加環境變數（後端）       | `apps/api/.env` + `.env.example` + Railway Variables                         |
 | 加部署相關設定           | Railway dashboard / Vercel dashboard，code 端不動                            |
-| 加圖表 / 資料視覺化      | `apps/web/src/pages/ProgressPage.tsx` + recharts                            |
+| 加圖表 / 資料視覺化      | `apps/web/src/pages/ProgressPage.tsx` + recharts                             |
+| 加驗證錯誤訊息（多語）   | schema message 用 `errors.*` key + 三份 locale 的 `errors` 區塊 + 前端 `t()` |
 
 ## 路徑速查（常忘的）
 

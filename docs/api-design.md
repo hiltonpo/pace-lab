@@ -349,3 +349,29 @@ Sprint 4 只「加」欄位（mainSetPaceSec），不動 Sprint 3 的欄位—�
 ### 相似邏輯但不共用:配速與時間解析
 
 interval 主段配速輸入（"4:32"）與時間輸入（"25:00"）格式相同（mm:ss），共用 `parseDuration` 解析；但**錯誤訊息分開**（配速用 `paceError`、時間用 `durationError`），因為使用者情境不同（範例、欄位名不同）。相似邏輯可共用，語意不同的訊息該分開。
+
+## Sprint 5 新增慣例
+
+### PersonalRecord：沿用既有 enum，不另立命名
+
+PR 的 `distance` 直接用 `raceTypeSchema`（marathon/half_marathon/10k/5k），不定義新的 PR_DISTANCES：
+
+- 單一來源：距離定義只有一套（raceType），PR 與計畫用同一組
+- 可對照：之後「PR vs 計畫目標」對照時 distance 直接對得上（都是 marathon）
+- 配速換算共用既有 `RACE_DISTANCE_KM`
+
+新增綁 user 的表時，記得在 User 加反向關聯（`personalRecords PersonalRecord[]`）——Prisma 要求關聯兩邊都定義，否則 migrate 失敗。
+
+### 同距離多筆的取捨：查詢時挑，不在寫入時限制
+
+PR 允許同距離多筆（保留歷史，看進步）。「當前 PR」在查詢/前端挑最快（timeSec 最小），而不是寫入時限制「一距離一筆」。資料層保留完整事件、呈現層做彙整——同 snapshot 思路。
+
+### 錯誤訊息 i18n 化：schema 存 key，前端翻譯
+
+跨全專案的錯誤訊息多語系策略：
+
+- schema 的 `message` 存「i18n key」（如 `errors.time.positive`），不寫死語言
+- 前端顯示用 `t(errors.X.message ?? "")` 翻譯（`?? ""` 處理 message 可能 undefined 的型別）
+- 三份 locale 的 `errors` 區塊提供翻譯
+- `mutation.error`（API/網路錯誤）不走此機制——那是後端回傳的訊息，非 Zod key
+- 好處：切語言時驗證錯誤訊息跟著變；壞處：key 要跟 i18n 完全對齊，否則原始 key 露出

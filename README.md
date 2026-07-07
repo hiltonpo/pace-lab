@@ -56,6 +56,15 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - Main-set actual vs target pace comparison with diff indicator (faster / slower)
 - Pace-diff shown for quality workouts only (tempo / marathon / interval), where hitting target pace matters in the Daniels method
 
+### Sprint 5: Personal Records + Progress Trend
+
+- Log personal records per standard distance (5K / 10K / half / full), reusing the same `raceType` naming as plans
+- PR cards show finish time, converted pace, and VDOT
+- Progress trend chart per distance (Recharts), Y-axis reversed so up = faster = improvement
+- Same-date dedup in trend (keeps the fastest that day)
+- Required-date validation; empty-time guard
+- Fully internationalized validation error messages (zh / ja / en) — schema stores i18n keys, front-end translates
+
 ## Tech Stack
 
 ### Frontend
@@ -269,7 +278,7 @@ Sprint 2 過程中也碰到 pnpm 嚴格依賴的雷（peer dependency 如 `tslib
 - [x] Sprint 2: Training plan generator (Jack Daniels VDOT formula)
 - [x] Sprint 3: Workout logging + progress charts
 - [x] Sprint 4: Interval-specific pace logging
-- [ ] Sprint 5: Personal records, plan adjustment
+- [x] Sprint 5: Personal records + progress trend
 - [ ] Sprint 6: PWA support, offline-first
 - [ ] Sprint 6+: Garmin Connect API auto-sync
 
@@ -277,6 +286,8 @@ Sprint 2 過程中也碰到 pnpm 嚴格依賴的雷（peer dependency 如 `tslib
 
 - Edit plan / delete a single planned workout (will trigger `ActualWorkout` SetNull)
 - Per-rep interval logging (surface pace fade across reps as a fatigue indicator)
+- Plan adjustment (recalculate paces / volume based on actual performance) — deferred from Sprint 5
+- Cross-distance strength analysis (VDOT comparison; needs multi-distance data + short-distance VDOT scoping)
 - Garmin Connect API auto-sync (import pace / HR / per-lap data automatically)
 
 ## License
