@@ -67,11 +67,13 @@ const historyByDistance = (prs: PersonalRecordResponse[], distance: string) =>
       date: new Date(pr.date).toLocaleDateString(undefined, {
         year: "2-digit",
         month: "short",
+        day: "numeric",
       }),
       timeSec: pr.timeSec,
     }));
 
-const HistoryTooltip = ({ active, payload }: any) => {
+const HistoryTooltip = (props: any) => {
+  const { active, payload } = props;
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border bg-background px-2 py-1 text-xs shadow-sm">
@@ -322,9 +324,9 @@ export const PRPage = () => {
                   <Line
                     type="monotone"
                     dataKey="timeSec"
-                    stroke="var(--primary)"
+                    stroke="#2563eb"
                     strokeWidth={2}
-                    dot={{ r: 4, fill: "var(--primary)" }}
+                    dot={{ r: 4, fill: "#2563eb" }}
                   />
                 </LineChart>
               </ResponsiveContainer>

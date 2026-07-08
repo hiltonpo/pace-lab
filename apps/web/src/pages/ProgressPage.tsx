@@ -66,6 +66,24 @@ const buildPaceData = (workouts: ActualWorkoutResponse[]) =>
       return am - bm || ad - bd;
     });
 
+/** 每週訓練量 tooltip（顯示 週起始 + 里程）*/
+const WeeklyTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: { week: string; distance: number } }>;
+}) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const data = payload[0].payload;
+  return (
+    <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-sm">
+      <p className="font-medium">{data.week}</p>
+      <p className="text-muted-foreground tabular-nums">{data.distance} km</p>
+    </div>
+  );
+};
+
 /** 配速圖自訂 tooltip（顯示 "5:30" 而非秒數） */
 const PaceTooltip = ({
   active,
@@ -79,7 +97,7 @@ const PaceTooltip = ({
   return (
     <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-sm">
       <p className="font-medium">{data.date}</p>
-      <p className="text-muted-foreground">{data.paceLabel}/km</p>
+      <p className="text-muted-foreground">{data.paceLabel}</p>
     </div>
   );
 };
@@ -117,7 +135,7 @@ export function ProgressPage() {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="week" className="text-xs" />
               <YAxis className="text-xs" />
-              <Tooltip />
+              <Tooltip content={<WeeklyTooltip />} />
               <Line
                 type="monotone"
                 dataKey="distance"
