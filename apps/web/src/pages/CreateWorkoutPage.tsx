@@ -18,8 +18,9 @@ import {
   useCreateWorkout,
   useUpdateWorkout,
   useWorkout,
-} from "../hooks/useWorkouts";
-import { usePlanDetail } from "../hooks/usePlans";
+} from "@/hooks/useWorkouts";
+import { usePlanDetail } from "@/hooks/usePlans";
+import { useOnline } from "@/hooks/useOnline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ export function CreateWorkoutPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { id: editId } = useParams<{ id: string }>();
+  const isOnline = useOnline();
 
   const isEditMode = !!editId; // 有id = 編輯模式
 
@@ -487,11 +489,18 @@ export function CreateWorkoutPage() {
           </Card>
         )}
 
+        {/* 離線提示 */}
+        {!isOnline && (
+          <p className="text-sm text-amber-600 dark:text-amber-500 text-center">
+            {t("common.offlineCannotSave")}
+          </p>
+        )}
+
         {/* 送出 */}
         <div className="flex gap-3">
           <Button
             type="submit"
-            disabled={mutation.isPending}
+            disabled={!isOnline || mutation.isPending}
             className="flex-1"
           >
             {mutation.isPending

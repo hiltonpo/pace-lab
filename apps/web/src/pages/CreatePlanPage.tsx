@@ -13,7 +13,7 @@ import {
   type RaceType,
 } from "@pace-lab/shared";
 
-import { createPlan } from "../lib/plansApi";
+import { createPlan } from "@/lib/plansApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PACE_SHORT_LABELS } from "@pace-lab/shared";
+import { useOnline } from "@/hooks/useOnline";
 
 const RACE_TYPES: RaceType[] = ["marathon", "half_marathon", "10k", "5k"];
 const WEEKS_OPTIONS = [8, 12, 16] as const;
@@ -34,6 +35,7 @@ export const CreatePlanPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isOnline = useOnline();
 
   // 表單目標時間用字串輸入（"3:59:00"），送出前再轉秒數
   const [goalTimeStr, setGoalTimeStr] = useState("3:59:00");
@@ -244,8 +246,18 @@ export const CreatePlanPage = () => {
           </Card>
         )}
 
+        {/* 離線提示 */}
+        {!isOnline && (
+          <p className="text-sm text-amber-600 dark:text-amber-500 text-center">
+            {t("common.offlineCannotSave")}
+          </p>
+        )}
         {/* 送出按鈕 */}
-        <Button type="submit" disabled={mutation.isPending} className="w-full">
+        <Button
+          type="submit"
+          disabled={!isOnline || mutation.isPending}
+          className="w-full"
+        >
           {mutation.isPending
             ? t("plans.form.submitting")
             : t("plans.form.submit")}

@@ -12,7 +12,9 @@
   "common": {
     "loading": "Loading…",
     "cancel": "cancel",
-    "edit": "edit"
+    "edit": "edit",
+    "offline": "Offline — showing cached data, changes can't be saved",
+    "offlineCannotSave": "You're offline. Connect to the internet to save"
   },
   "nav": {
     "plans": "Plans",

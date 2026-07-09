@@ -10,14 +10,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useOnline } from "@/hooks/useOnline";
 
 export function Layout() {
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { locale, changeLocale, available, labels } = useLocale();
+  const isOnline = useOnline();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* 離線提示條 */}
+      {!isOnline && (
+        <div className="bg-amber-500 text-white text-center text-sm py-1.5 px-4">
+          {t("common.offline")}
+        </div>
+      )}
+
       <header className="border-b border-border">
         <div className="mx-auto max-w-7xl px-4 flex h-14 items-center justify-between">
           {/* 左側:logo + 導覽 */}

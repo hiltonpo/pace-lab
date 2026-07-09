@@ -22,8 +22,9 @@ import {
   type CreatePRInput,
   type PersonalRecordResponse,
 } from "@pace-lab/shared";
-import { usePRs, useCreatePR, useDeletePR } from "../hooks/usePRs";
-import { usePlans } from "../hooks/usePlans";
+import { usePRs, useCreatePR, useDeletePR } from "@/hooks/usePRs";
+import { usePlans } from "@/hooks/usePlans";
+import { useOnline } from "@/hooks/useOnline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -91,6 +92,7 @@ export const PRPage = () => {
   const { data: plans } = usePlans();
   const createMutation = useCreatePR();
   const deleteMutation = useDeletePR();
+  const isOnline = useOnline();
 
   const [timeStr, setTimeStr] = useState("");
   const [timeError, setTimeError] = useState<string | null>(null);
@@ -253,9 +255,16 @@ export const PRPage = () => {
                 />
               </div>
 
+              {/* 離線提示 */}
+              {!isOnline && (
+                <p className="text-sm text-amber-600 dark:text-amber-500 text-center">
+                  {t("common.offlineCannotSave")}
+                </p>
+              )}
+
               <Button
                 type="submit"
-                disabled={createMutation.isPending}
+                disabled={!isOnline || createMutation.isPending}
                 className="w-full"
               >
                 {createMutation.isPending
@@ -368,7 +377,8 @@ export const PRPage = () => {
                     </div>
                     <button
                       onClick={() => deleteMutation.mutate(pr.id)}
-                      className="text-muted-foreground hover:text-destructive"
+                      disabled={!isOnline}
+                      className="text-muted-foreground hover:text-destructive disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

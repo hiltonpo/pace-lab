@@ -12,7 +12,9 @@
   "common": {
     "loading": "載入中…",
     "cancel": "取消",
-    "edit": "編輯"
+    "edit": "編輯",
+    "offline": "離線中 — 顯示的是快取資料，無法儲存變更",
+    "offlineCannotSave": "離線中，無法儲存。請連上網路後再試"
   },
   "nav": {
     "plans": "計畫",
