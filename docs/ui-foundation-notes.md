@@ -685,3 +685,106 @@ PR 原本想做兩種分析，二擇一時依產品性質選「歷史曲線」�
 ### 錯誤訊息 i18n：t() 吃 optional 的處理
 
 `errors.X.message` 型別是 `string | undefined`，但 `t()` 只吃 string。用 `t(errors.X.message ?? "")` 補 fallback——不用 `!` 斷言（有風險），`?? ""` 較安全（undefined 時傳空字串）。
+
+---
+
+## Sprint 6 補充（PWA / Offline）
+
+### PWA 的三個層次
+
+```
+層次 1：可安裝（manifest）——裝到主畫面、standalone 全螢幕
+層次 2：離線可看（Service Worker 快取）——沒網路時看得到載過的內容
+層次 3：離線可操作（離線佇列 + 背景同步）——沒網路時寫入，恢復後同步
+```
+
+本專案做 1 + 2。層次 3 需要 IndexedDB + Background Sync + 衝突處理，複雜度高，且「跑者多半跑完才記錄」，實際需求不強——記入 backlog。
+
+### vite-plugin-pwa
+
+用 plugin 而非手刻 Service Worker：plugin 底層是 workbox，依設定生成 `sw.js`。
+
+```typescript
+VitePWA({
+  registerType: "autoUpdate",
+  manifest: {
+    name: "pace-lab", short_name: "pace-lab",
+    theme_color: "#1e2a4a", background_color: "#ffffff",
+    display: "standalone", start_url: "/",
+    icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }, /* 512 */],
+  },
+  workbox: {
+    globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+    runtimeCaching: [/* API 的 NetworkFirst */],
+  },
+})
+```
+
+⚠️ `manifest` 的屬性（name / short_name / icons / theme_color…）**必須放在 `manifest: {}` 內**，放外層會 TypeScript 報錯（`VitePWAOptions` 沒有這些屬性）。
+
+### dev vs build + preview
+
+```
+pnpm dev        開發模式，跑原始碼、熱更新（快，日常開發用）
+pnpm build      編譯成 dist/ 最終成品（Service Worker 在這時生成）
+pnpm preview    跑 dist/ 成品，模擬 production
+```
+
+**Service Worker 是 build 產物**——`dev` 模式不完整，測 PWA 必須 `build`。本地 preview 又會卡在 OAuth redirect / 後端沒開，所以最實際的做法是：本地 `build` 確認 PWA 檔案生成（輸出會顯示 `PWA vX / precache N entries / dist/sw.js`），然後 **push 上 production（HTTPS）測安裝與離線**。
+
+PWA（Service Worker）只在 **HTTPS 或 localhost** 運作。
+
+### 離線狀態偵測（原生事件的 hook）
+
+不是所有狀態都靠 TanStack Query——連線狀態用瀏覽器原生事件：
+
+```typescript
+export const useOnline = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  return isOnline;
+};
+```
+
+- `useEffect` 用 `[]`：只在掛載時註冊一次事件（不加會每次 render 重複註冊 → 記憶體洩漏）
+- `return` 的 cleanup 在元件卸載時移除監聽
+- 自訂 hook 裡的 useEffect 就是「呼叫它的元件」的 useEffect，規則相同
+- 多個元件各自呼叫 `useOnline()` → 各有一份 state（hook 是邏輯重用，不是狀態共享）
+
+⚠️ `navigator.onLine` 只知道「有沒有連上網路介面」，不保證連得到 API（連上沒外網的 WiFi 仍是 true）。對「飛航模式／沒訊號」的主要情境夠用。
+
+### 離線 UI 的兩層提示
+
+```
+Layout 橫幅       → 全域狀態告知（「你現在離線」）
+按鈕上方提示 + disable → 情境告知（「所以不能存」）
+```
+
+用琥珀色（amber）不用紅色——離線是「狀態」不是「錯誤」，也避免跟既有 destructive（紅）語意衝突。自訂 `<button>` 要自己加 `disabled:opacity-40 disabled:cursor-not-allowed`（shadcn Button 已內建）。
+
+### 依賴地獄的排查順序
+
+裝 `vite-plugin-pwa` 時踩到 vite 內部 chunk 找不到（`Cannot find module .../chunks/dep-XXX.js`）。排查順序：
+
+1. `pnpm install`（修依賴連結）
+2. `rm -rf apps/web/node_modules/.vite`（清 Vite 快取）
+3. `rm -rf node_modules **/node_modules` + `pnpm store prune` + `pnpm install`
+4. **`rm -f pnpm-lock.yaml`** 再 `pnpm install`（lockfile 可能記錄了壞掉的依賴組合）
+5. 重裝後 **`prisma generate`**（重裝 node_modules 會清掉生成的 Prisma Client）
+
+版本相容也要注意：`vite-plugin-pwa` 1.x 需要 Vite 6+；Vite 5 要用 **0.20.x**。`pnpm add` 不指定版本會裝最新，未必相容。
+
+### PWA icon
+
+- 尺寸 192×192 + 512×512，放 `public/`，manifest 用絕對路徑（`/icon-192.png`）
+- **不要自己畫圓角**——iOS / Android 會自行裁切；自畫圓角 + 圓角外留白，會露出白邊
+- icon 應為 full-bleed（背景填滿整個正方形到四角）

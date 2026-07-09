@@ -375,3 +375,45 @@ PR 允許同距離多筆（保留歷史，看進步）。「當前 PR」在查�
 - 三份 locale 的 `errors` 區塊提供翻譯
 - `mutation.error`（API/網路錯誤）不走此機制——那是後端回傳的訊息，非 Zod key
 - 好處：切語言時驗證錯誤訊息跟著變；壞處：key 要跟 i18n 完全對齊，否則原始 key 露出
+
+## Sprint 6 新增慣例（PWA 對 API 的影響）
+
+### API 回應的快取策略：NetworkFirst
+
+Service Worker 對 API 請求採 **NetworkFirst**（網路優先、失敗退快取）：
+
+```typescript
+runtimeCaching: [{
+  urlPattern: ({ url }) => url.origin === "https://pace-labapi-production.up.railway.app",
+  handler: "NetworkFirst",
+  options: {
+    cacheName: "api-cache",
+    expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+    cacheableResponse: { statuses: [0, 200] },
+  },
+}]
+```
+
+- **線上**：連 API 拿最新資料，順便更新快取
+- **離線**：API 連不上 → 退用快取 → 使用者仍能看到「上次載過的」計畫與訓練
+- 只快取成功回應（200），不快取錯誤
+
+對照三種策略的取捨：
+
+| 策略 | 行為 | 適用 |
+|---|---|---|
+| CacheFirst | 先找快取，沒有才連網 | 靜態資源（JS/CSS/字型/圖片） |
+| NetworkFirst | 先連網，失敗才用快取 | 會變的資料（API 回應） |
+| StaleWhileRevalidate | 立刻給快取、背景更新 | 可接受短暫舊資料、要求快速顯示 |
+
+### 認證資料的快取風險
+
+API 需要 session cookie，NetworkFirst 會把「登入後的資料」存進快取。若切換帳號，可能短暫看到前一個帳號的快取資料。
+
+目前個人使用尚可接受；未來若支援多帳號，登出時應清除 `api-cache`（`caches.delete("api-cache")`）。
+
+### 寫入操作在離線時應被擋下
+
+PWA 定位是「離線可看」（層次 2），不是「離線可寫」（層次 3，需離線佇列 + 背景同步）。因此離線時前端 disable 儲存／刪除按鈕，不送出寫入請求——避免使用者填完表單才失敗。
+
+若未來要做離線寫入，需要 IndexedDB 暫存 + Background Sync API + 衝突處理，屬獨立主題。

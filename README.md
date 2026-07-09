@@ -65,6 +65,13 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - Required-date validation; empty-time guard
 - Fully internationalized validation error messages (zh / ja / en) — schema stores i18n keys, front-end translates
 
+### Sprint 6: PWA (Installable + Offline)
+
+- Installable as a standalone app (Web App Manifest, custom icon, no browser chrome)
+- Service Worker via `vite-plugin-pwa` (workbox): precached app shell + **NetworkFirst** caching for API responses
+- Works offline: previously loaded plans and workouts remain viewable without a connection
+- Offline-aware UI: status banner plus disabled save/delete actions while offline (no silent failures)
+
 ## Tech Stack
 
 ### Frontend
@@ -76,6 +83,7 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - **React Hook Form + Zod** (form validation, shared with backend)
 - **Recharts** (progress charts)
 - **react-i18next** (Japanese / Traditional Chinese / English)
+- **PWA** — installable, offline-capable (vite-plugin-pwa / workbox)
 - **Dark mode** (system preference + manual toggle)
 - Deployed on Vercel
 
@@ -263,6 +271,14 @@ Production 環境（Vercel ↔ Railway 不同網域）：
 
 詳見 [Vercel Deployment Guide](./docs/vercel-deploy-guide.md)。
 
+### PWA scope: offline-readable, not offline-writable
+
+PWA is implemented at two levels: installable (manifest) and offline-readable (Service Worker caching). Offline **writes** (queue + background sync) are deliberately out of scope.
+
+Rationale: runners typically log a session *after* finishing, when they're back on a network. Offline writing would require IndexedDB queuing, the Background Sync API, and conflict resolution — significant complexity for a weak real-world need. Instead, the UI detects offline state and disables write actions, so users never fill in a form only to have it fail.
+
+API responses use **NetworkFirst**: fresh data when online, cached data as a fallback when offline.
+
 ### pnpm
 
 - 磁碟空間使用效率（單一 content-addressable store）
@@ -279,7 +295,7 @@ Sprint 2 過程中也碰到 pnpm 嚴格依賴的雷（peer dependency 如 `tslib
 - [x] Sprint 3: Workout logging + progress charts
 - [x] Sprint 4: Interval-specific pace logging
 - [x] Sprint 5: Personal records + progress trend
-- [ ] Sprint 6: PWA support, offline-first
+- [x] Sprint 6: PWA — installable + offline caching
 - [ ] Sprint 6+: Garmin Connect API auto-sync
 
 ### Sprint 4+ Backlog (ideas parked)

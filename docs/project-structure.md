@@ -63,7 +63,7 @@ apps/api/
 
 ```
 apps/web/
-├── public/                   ← 靜態資源（不會被 Vite 處理）
+├── public/                   ← 靜態資源（不會被 Vite 處理；PWA icon 放這裡）
 ├── src/
 │   ├── pages/                ← 路由對應的頁面元件
 │   │   ├── HomePage.tsx
@@ -86,7 +86,8 @@ apps/web/
 │   │   ├── useWorkouts.ts    ← 訓練紀錄 CRUD + 編輯（Sprint 3）
 │   │   ├── usePRs.ts         ← 個人紀錄 CRUD（Sprint 5）
 │   │   ├── useTheme.ts       ← dark mode 切換
-│   │   └── useLocale.ts      ← 語言切換
+│   │   ├── useLocale.ts      ← 語言切換
+│   │   └── useOnline.ts      ← 網路連線狀態偵測（Sprint 6）
 │   ├── i18n/                 ← 多語言設定
 │   │   ├── index.ts          ← i18next 設定、初始化
 │   │   └── locales/
@@ -104,7 +105,7 @@ apps/web/
 │   ├── index.css             ← Tailwind v4 + CSS 變數 + 日系配色
 │   └── vite-env.d.ts         ← import.meta.env 的 TS 型別擴充
 ├── components.json           ← shadcn 設定
-├── vite.config.ts            ← Vite 設定（plugin、alias）
+├── vite.config.ts            ← Vite 設定（plugin、alias、VitePWA manifest + workbox）
 ├── tsconfig.json
 ├── index.html                ← Google Fonts、root div
 ├── .env                      ← 本地環境變數（不 commit）
@@ -247,6 +248,29 @@ import {
 - PersonalRecord：個人紀錄（distance 沿用 raceType 命名、可對照計畫目標）
 - distance / RACE_DISTANCE_KM 沿用既有 raceType，不另立命名
 - 錯誤訊息 i18n 化：所有 schema 的 message 改存 i18n key（`errors.*`），前端 `t(errors.X.message ?? "")` 翻譯，切語言時錯誤訊息跟著變
+
+### Sprint 6 補充（PWA）
+
+PWA 相關檔案不在 `src/`，而是設定與靜態資源：
+
+```
+apps/web/
+├── vite.config.ts            ← VitePWA plugin（manifest + workbox 快取策略）
+├── public/
+│   ├── paceLab_logo_192.png  ← PWA icon（192×192）
+│   └── paceLab_logo_512.png  ← PWA icon（512×512）
+└── src/hooks/useOnline.ts    ← 離線狀態偵測（原生 online/offline 事件）
+```
+
+build 產物（`dist/`，由 vite-plugin-pwa 生成，不進 git）：
+
+```
+dist/sw.js                    ← Service Worker
+dist/workbox-*.js             ← workbox 快取邏輯
+dist/manifest.webmanifest     ← PWA manifest
+```
+
+⚠️ PWA 只在 `build` 後生成 Service Worker——測 PWA 要 `build` +（production 或 `preview`），`dev` 模式不完整。
 
 ## 文件：`docs/`
 
