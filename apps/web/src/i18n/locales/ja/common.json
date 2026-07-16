@@ -153,6 +153,15 @@
       "normal": "普通",
       "tired": "少し疲れ",
       "exhausted": "へとへと"
+    },
+    "fit": {
+      "upload": "Garmin FIT ファイルをアップロード",
+      "hint": "Garmin Connect から元データをエクスポートすると、自動入力されます",
+      "parsing": "解析中…",
+      "parsed": "自動入力しました。確認して保存してください",
+      "mainSetDetected": "インターバルを検出：{{sets}} × {{distance}}m、主要区間の平均 {{pace}}/km",
+      "noMainSetDetected": "インターバル構造を検出できませんでした。ラップ記録があるか確認するか、主要区間のペースを手動で入力してください",
+      "typeMismatch": "インターバル構造を検出しましたが、種目がインターバルではありません。必要に応じて種目を変更してください"
     }
   },
   "pr": {

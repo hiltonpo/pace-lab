@@ -153,6 +153,15 @@
       "normal": "普通",
       "tired": "累",
       "exhausted": "很累"
+    },
+    "fit": {
+      "upload": "上傳 Garmin FIT 檔",
+      "hint": "從 Garmin Connect 匯出活動原始檔，自動填入數據",
+      "parsing": "解析中…",
+      "parsed": "已自動填入數據，請確認後儲存",
+      "mainSetDetected": "偵測到間歇：{{sets}} × {{distance}}m，主段平均 {{pace}}/km",
+      "noMainSetDetected": "未偵測到間歇結構。若這是間歇訓練，請確認 Garmin 有分趟記錄，或手動填寫主段配速",
+      "typeMismatch": "偵測到間歇結構，但目前類型不是間歇。若這是間歇訓練，請改選類型"
     }
   },
   "pr": {

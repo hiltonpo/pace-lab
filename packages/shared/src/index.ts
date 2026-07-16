@@ -15,3 +15,4 @@ export type {
 } from "./training/templates/types.js";
 export * from "./training/planSchemas.js";
 export * from "./training/prSchemas.js";
+export * from "./training/fitAnalysis.js";

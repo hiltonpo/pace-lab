@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +22,8 @@ import {
 } from "@/hooks/useWorkouts";
 import { usePlanDetail } from "@/hooks/usePlans";
 import { useOnline } from "@/hooks/useOnline";
+import { useParseFit } from "@/hooks/useFitUpload";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,6 +182,49 @@ export function CreateWorkoutPage() {
     }
   };
 
+  // FIT檔上傳資料處理
+  const handleFitUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    parseFitMutation.mutate(file, {
+      onSuccess: (data) => {
+        // 預填表單
+        if (data.distanceKm) {
+          setValue(
+            "actualDistanceKm",
+            Math.round(data.distanceKm * 100) / 100,
+            { shouldValidate: true }
+          );
+        }
+        if (data.durationSec) {
+          setValue("actualDurationSec", data.durationSec, {
+            shouldValidate: true,
+          });
+          setDurationStr(formatDuration(data.durationSec));
+        }
+        if (data.avgHeartRate) setValue("avgHeartRate", data.avgHeartRate);
+        if (data.maxHeartRate) setValue("maxHeartRate", data.maxHeartRate);
+        if (data.date) setValue("date", data.date);
+
+        // interval 主段配速（偵測到才填）
+        if (data.mainSet) {
+          setValue("mainSetPaceSec", data.mainSet.mainSetPaceSec, {
+            shouldValidate: true,
+          });
+          setMainPaceStr(formatDuration(data.mainSet.mainSetPaceSec));
+          // 只有「自由記錄」（不是從計畫來）才自動設類型
+          if (!plannedWorkout) {
+            setValue("workoutType", "interval");
+          }
+        }
+      },
+    });
+    // 清空 input，讓同一個檔能重選
+    e.target.value = "";
+  };
+
+  const parseFitMutation = useParseFit();
   const createMutation = useCreateWorkout();
   const updateMutation = useUpdateWorkout();
   const mutation = isEditMode ? updateMutation : createMutation;
@@ -239,6 +285,75 @@ export function CreateWorkoutPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* FIT 檔上傳 */}
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <label className="flex flex-col items-center gap-2 cursor-pointer py-4">
+              <Upload className="w-8 h-8 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {t("workout.fit.upload")}
+              </span>
+              <span className="text-xs text-muted-foreground text-center">
+                {t("workout.fit.hint")}
+              </span>
+              <input
+                type="file"
+                accept=".fit"
+                onChange={handleFitUpload}
+                className="hidden"
+                disabled={parseFitMutation.isPending || !isOnline}
+              />
+            </label>
+
+            {parseFitMutation.isPending && (
+              <p className="text-sm text-center text-muted-foreground">
+                {t("workout.fit.parsing")}
+              </p>
+            )}
+
+            {parseFitMutation.isError && (
+              <p className="text-sm text-center text-destructive">
+                {parseFitMutation.error.message}
+              </p>
+            )}
+
+            {/* 解析成功的摘要 */}
+            {parseFitMutation.isSuccess && parseFitMutation.data && (
+              <div className="mt-2 rounded-md bg-primary/5 dark:bg-primary/10 p-3 text-xs space-y-1">
+                <p className="font-medium text-primary">
+                  ✓ {t("workout.fit.parsed")}
+                </p>
+                {/* 偵測到主段 */}
+                {parseFitMutation.data.mainSet && (
+                  <p className="text-muted-foreground">
+                    🔁{" "}
+                    {t("workout.fit.mainSetDetected", {
+                      sets: parseFitMutation.data.mainSet.sets,
+                      distance: parseFitMutation.data.mainSet.setDistanceM,
+                      pace: formatDuration(
+                        parseFitMutation.data.mainSet.mainSetPaceSec
+                      ),
+                    })}
+                  </p>
+                )}
+
+                {/* 選了 interval 但沒偵測到 */}
+                {!parseFitMutation.data.mainSet && isInterval && (
+                  <p className="text-amber-600 dark:text-amber-500">
+                    ⚠️ {t("workout.fit.noMainSetDetected")}
+                  </p>
+                )}
+
+                {/* 偵測到但類型不是 interval */}
+                {parseFitMutation.data.mainSet && !isInterval && (
+                  <p className="text-amber-600 dark:text-amber-500">
+                    ⚠️ {t("workout.fit.typeMismatch")}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         {/* 基本資料 */}
         <Card>
           <CardContent className="pt-6 space-y-4">

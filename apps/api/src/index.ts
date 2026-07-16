@@ -6,10 +6,14 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { SHARED_VERSION } from "@pace-lab/shared";
 import cookie from "@fastify/cookie";
+import multipart from "@fastify/multipart";
+
 import { authRoutes } from "./routes/auth.js";
 import { plansRoutes } from "./routes/plans.js";
 import { workoutsRoutes } from "./routes/workouts.js";
 import { prRoutes } from "./routes/pr.js";
+import { fitRoutes } from "./routes/fit.js";
+import { fi } from "zod/v4/locales";
 
 const app = Fastify({
   logger: {
@@ -29,11 +33,18 @@ await app.register(cors, {
   credentials: true,
 });
 
+await app.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB（FIT 檔通常 < 1MB，10MB 綽綽有餘）
+  },
+});
+
 await app.register(cookie);
 await app.register(authRoutes);
 await app.register(plansRoutes);
 await app.register(workoutsRoutes);
 await app.register(prRoutes);
+await app.register(fitRoutes);
 
 app.get("/api/health", async () => {
   await prisma.$queryRaw`SELECT 1`;

@@ -153,6 +153,15 @@
       "normal": "Normal",
       "tired": "Tired",
       "exhausted": "Exhausted"
+    },
+    "fit": {
+      "upload": "Upload Garmin FIT file",
+      "hint": "Export the original activity from Garmin Connect to auto-fill",
+      "parsing": "Parsing...",
+      "parsed": "Auto-filled. Review and save.",
+      "mainSetDetected": "Interval detected: {{sets}} × {{distance}}m, main set avg {{pace}}/km",
+      "noMainSetDetected": "No interval structure detected. Check that laps were recorded, or enter the main-set pace manually",
+      "typeMismatch": "Interval structure detected, but the workout type isn't interval. Change the type if needed"
     }
   },
   "pr": {

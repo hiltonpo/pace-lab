@@ -14,6 +14,8 @@
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.0",
+    "@fastify/multipart": "^10.1.0",
+    "@garmin/fitsdk": "^21.208.0",
     "@pace-lab/shared": "workspace:*",
     "@prisma/client": "6",
     "arctic": "^3.7.0",
