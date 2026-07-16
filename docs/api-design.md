@@ -417,3 +417,67 @@ API 需要 session cookie，NetworkFirst 會把「登入後的資料」存進快
 PWA 定位是「離線可看」（層次 2），不是「離線可寫」（層次 3，需離線佇列 + 背景同步）。因此離線時前端 disable 儲存／刪除按鈕，不送出寫入請求——避免使用者填完表單才失敗。
 
 若未來要做離線寫入，需要 IndexedDB 暫存 + Background Sync API + 衝突處理，屬獨立主題。
+
+## Sprint 7 新增慣例（FIT 檔匯入）
+
+### 檔案上傳 endpoint
+
+`POST /api/fit/parse` — 接 multipart/form-data 的 .fit 檔：
+
+```typescript
+await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+
+app.post("/api/fit/parse", async (request, reply) => {
+  const user = await getCurrentUser(request);
+  if (!user) return reply.status(401).send({ error: "Unauthorized" });
+
+  const data = await request.file();          // @fastify/multipart
+  if (!data) return reply.status(400).send({ error: "No file uploaded" });
+  const buffer = await data.toBuffer();       // 二進位內容
+
+  const stream = Stream.fromBuffer(buffer);
+  if (!Decoder.isFIT(stream)) {               // 先驗證再解析
+    return reply.status(400).send({ error: "不是有效的 FIT 檔" });
+  }
+  const { messages, errors } = new Decoder(stream).read();
+  // ...
+});
+```
+
+要點：
+
+- **限制檔案大小**（FIT 通常 < 1MB，設 10MB 上限防濫用）
+- **先 `Decoder.isFIT()` 驗證再解析**——使用者可能上傳照片/PDF，早點擋下
+- **`errors` 不一定要中斷**——FIT 可能部分損壞但主要資料仍可用，log 後繼續（盡力而為）
+- 外部資料欄位不保證存在，大量用 `?.` / `?? null` 防禦性取值
+
+### 「解析」與「儲存」分離
+
+`/api/fit/parse` **只解析、不寫 DB**，回傳結構化資料給前端預填表單，使用者確認後才走既有的 `POST /api/workouts` 儲存。
+
+好處：
+
+- 解析失敗不產生髒資料
+- 使用者能檢查／微調再存（改類型、加備註、對應計畫項目）
+- 重用既有的建立 API，不重寫儲存邏輯
+- 單一職責：parse 只管解析
+
+### 單位對應是第三方整合的日常
+
+FIT 用公制原始單位，需轉換成應用層的單位：
+
+```
+FIT totalDistance（公尺）  → distanceKm（÷ 1000）
+FIT totalTimerTime（秒，可能小數） → durationSec（Math.round）
+FIT 沒有「秒/km」配速     → 自行計算：時間 ÷ 距離(km)
+```
+
+接任何第三方資料源，第一件事都是確認欄位單位與語意。
+
+### 演算法放 shared，不放 route
+
+`detectMainSet` 是純函式（不依賴 DB/HTTP），放 `packages/shared`：
+
+- 可寫單元測試（用真實 FIT 資料當測試案例）
+- 前後端都能用（目前後端用，未來前端也可即時分析）
+- route 只負責「解析檔案 + 呼叫演算法 + 回傳」，不含業務邏輯

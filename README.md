@@ -72,6 +72,16 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - Works offline: previously loaded plans and workouts remain viewable without a connection
 - Offline-aware UI: status banner plus disabled save/delete actions while offline (no silent failures)
 
+### Sprint 7: Garmin FIT Import
+
+- Upload a Garmin `.fit` file to auto-fill a workout (distance, duration, heart rate, date)
+- Parses activity data via Garmin's official `@garmin/fitsdk` (session summary + per-lap data)
+- **Automatic interval main-set detection**: identifies the fast reps among all laps and computes the true main-set pace — the exact problem Sprint 4 solved manually
+  - Real example: a 10×200m session averages 6:18/km overall (diluted by recovery jogs) but **4:17/km** for the main set
+  - Three guards prevent false positives on easy runs: pace threshold, fast/slow contrast, and rep-distance consistency
+- Respects the plan's workout type over the algorithm's guess; warns on mismatch instead of overriding
+- Unit-tested against real FIT data, including negative cases (easy runs must *not* be detected as intervals)
+
 ## Tech Stack
 
 ### Frontend
@@ -95,6 +105,8 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 - Arctic for Google OAuth
 - **Zod request validation** (shared schemas from `packages/shared`)
 - REST API with CRUD + PATCH, query-string filtering
+- **@garmin/fitsdk** — parse Garmin FIT activity files
+- **@fastify/multipart** — file uploads
 - Deployed on Railway
 
 ### Monorepo
@@ -271,6 +283,12 @@ Production 環境（Vercel ↔ Railway 不同網域）：
 
 詳見 [Vercel Deployment Guide](./docs/vercel-deploy-guide.md)。
 
+### FIT file upload instead of the Garmin Connect API
+
+Automatic sync via the Garmin Connect Developer API isn't viable for this project: the program is restricted to **business use**, requires registering as an organization, and passes through manual review for production access (the Health API also carries a one-time setup fee of roughly $5,000).
+
+Instead, users export the original `.fit` file from Garmin Connect and upload it here. Same outcome — no manual data entry — with no API authorization needed, and the FIT SDK is free to use. It also yields **per-lap data**, which enables automatic interval main-set detection (something the summary-level API wouldn't give as directly).
+
 ### PWA scope: offline-readable, not offline-writable
 
 PWA is implemented at two levels: installable (manifest) and offline-readable (Service Worker caching). Offline **writes** (queue + background sync) are deliberately out of scope.
@@ -296,7 +314,7 @@ Sprint 2 過程中也碰到 pnpm 嚴格依賴的雷（peer dependency 如 `tslib
 - [x] Sprint 4: Interval-specific pace logging
 - [x] Sprint 5: Personal records + progress trend
 - [x] Sprint 6: PWA — installable + offline caching
-- [ ] Sprint 6+: Garmin Connect API auto-sync
+- [x] Sprint 7: Garmin FIT import + automatic interval detection
 
 ### Sprint 4+ Backlog (ideas parked)
 
@@ -304,7 +322,8 @@ Sprint 2 過程中也碰到 pnpm 嚴格依賴的雷（peer dependency 如 `tslib
 - Per-rep interval logging (surface pace fade across reps as a fatigue indicator)
 - Plan adjustment (recalculate paces / volume based on actual performance) — deferred from Sprint 5
 - Cross-distance strength analysis (VDOT comparison; needs multi-distance data + short-distance VDOT scoping)
-- Garmin Connect API auto-sync (import pace / HR / per-lap data automatically)
+- Per-rep interval display (lap data is already parsed — surface pace fade across reps as a fatigue indicator)
+- Clear API cache on logout (NetworkFirst caches authenticated responses)
 
 ## License
 

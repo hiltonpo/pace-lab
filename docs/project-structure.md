@@ -42,7 +42,8 @@ apps/api/
 │   │   ├── auth.ts           ← /api/auth/* (OAuth flow、logout、/api/me)
 │   │   ├── plans.ts          ← /api/plans (CRUD)
 │   │   ├── workouts.ts       ← /api/workouts (CRUD + PATCH + 篩選)  ← Sprint 3
-│   │   └── pr.ts             ← /api/prs (個人紀錄 CRUD)  ← Sprint 5
+│   │   ├── pr.ts             ← /api/prs (個人紀錄 CRUD)  ← Sprint 5
+│   │   └── fit.ts            ← /api/fit/parse (FIT 檔解析，不存 DB)  ← Sprint 7
 │   ├── db.ts                 ← Prisma client 實體（單一來源）
 │   └── index.ts              ← Fastify app 啟動入口、CORS、plugin 註冊
 ├── .env                      ← 本地環境變數（不 commit）
@@ -87,7 +88,8 @@ apps/web/
 │   │   ├── usePRs.ts         ← 個人紀錄 CRUD（Sprint 5）
 │   │   ├── useTheme.ts       ← dark mode 切換
 │   │   ├── useLocale.ts      ← 語言切換
-│   │   └── useOnline.ts      ← 網路連線狀態偵測（Sprint 6）
+│   │   ├── useOnline.ts      ← 網路連線狀態偵測（Sprint 6）
+│   │   └── useFitUpload.ts   ← FIT 檔上傳解析（Sprint 7）
 │   ├── i18n/                 ← 多語言設定
 │   │   ├── index.ts          ← i18next 設定、初始化
 │   │   └── locales/
@@ -99,6 +101,7 @@ apps/web/
 │   │   ├── plansApi.ts       ← 計畫相關 API
 │   │   ├── workoutsApi.ts    ← 訓練紀錄 API（Sprint 3）
 │   │   ├── prApi.ts          ← 個人紀錄 API（Sprint 5）
+│   │   ├── fitApi.ts         ← FIT 解析 API（Sprint 7）
 │   │   └── utils.ts          ← shadcn 的 cn() 函式
 │   ├── App.tsx               ← Router 設定（BrowserRouter + Routes）
 │   ├── main.tsx              ← React 入口、QueryClientProvider 等 wrap
@@ -136,6 +139,8 @@ packages/shared/
 │   │   ├── planSchemas.ts    ← 計畫 Zod schemas（Sprint 3 加 interval/warmup/cooldown response 欄位）
 │   │   ├── workoutSchemas.ts ← 訓練紀錄 Zod schemas + WEATHER/FEELING_OPTIONS（Sprint 3）
 │   │   ├── prSchemas.ts      ← 個人紀錄 Zod schemas（Sprint 5，distance 沿用 raceType）
+│   │   ├── fitAnalysis.ts    ← FIT lap 分析、interval 主段偵測（Sprint 7）
+│   │   ├── fitAnalysis.spec.ts ← 主段偵測測試（真實 FIT 資料 + 誤判防護）
 │   │   ├── generatePlan.ts   ← 計畫產生器（Sprint 3 加 interval 結構、warmup/cooldown、notes）
 │   │   ├── templates/
 │   │   │   ├── types.ts                 ← WorkoutTemplate、WeekTemplate 型別
@@ -271,6 +276,40 @@ dist/manifest.webmanifest     ← PWA manifest
 ```
 
 ⚠️ PWA 只在 `build` 後生成 Service Worker——測 PWA 要 `build` +（production 或 `preview`），`dev` 模式不完整。
+
+### Sprint 7 補充（FIT 檔匯入）
+
+```typescript
+import {
+  // Types
+  FitLap,
+  MainSetAnalysis,
+
+  // 純函式
+  detectMainSet, // 從 laps 自動偵測 interval 主段
+} from "@pace-lab/shared";
+```
+
+新增依賴：
+
+```
+apps/api：
+  @garmin/fitsdk      ← Garmin 官方 FIT 解析 SDK（免費）
+  @fastify/multipart  ← 檔案上傳（multipart/form-data）
+```
+
+資料流：
+
+```
+使用者選 .fit 檔
+  → 前端 FormData 上傳 → POST /api/fit/parse
+  → 後端 Buffer → Stream → Decoder → messages（sessionMesgs / lapMesgs）
+  → detectMainSet(laps) 偵測 interval 主段
+  → 回傳結構化資料（不存 DB）
+  → 前端預填表單 → 使用者確認 → POST /api/workouts（既有 API）存檔
+```
+
+⚠️ Garmin Connect Developer API 需商業用途申請 + 人工審核（Health API 另有約 $5,000 設置費），個人專案不可行。改以「使用者自行匯出 FIT 檔上傳」達成同樣目的——FIT SDK 免費、不需授權。
 
 ## 文件：`docs/`
 

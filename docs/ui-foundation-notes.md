@@ -788,3 +788,98 @@ Layout 橫幅       → 全域狀態告知（「你現在離線」）
 - 尺寸 192×192 + 512×512，放 `public/`，manifest 用絕對路徑（`/icon-192.png`）
 - **不要自己畫圓角**——iOS / Android 會自行裁切；自畫圓角 + 圓角外留白，會露出白邊
 - icon 應為 full-bleed（背景填滿整個正方形到四角）
+
+---
+
+## Sprint 7 補充（FIT 檔匯入）
+
+### FormData 上傳的坑：不要自己設 Content-Type
+
+```typescript
+const formData = new FormData();
+formData.append("file", file);
+
+const res = await fetch(url, {
+  method: "POST",
+  credentials: "include",
+  body: formData,
+  // ❌ 不要加 headers: { "Content-Type": "multipart/form-data" }
+});
+```
+
+傳 FormData 時瀏覽器會**自動設 Content-Type 並加上必要的 `boundary` 參數**。手動設會缺 boundary → 後端解析失敗。這是檔案上傳的經典坑。
+
+### 隱藏的 file input
+
+原生 `<input type="file">` 樣式難改，用 `<label>` 包起來、input 設 `hidden`：
+
+```tsx
+<label className="flex flex-col items-center gap-2 cursor-pointer py-4">
+  <Upload className="w-8 h-8 text-muted-foreground" />
+  <span className="text-sm font-medium">{t("workout.fit.upload")}</span>
+  <input type="file" accept=".fit" onChange={handleFitUpload} className="hidden" />
+</label>
+```
+
+點 label 會觸發 input。`accept=".fit"` 讓選檔視窗預先篩選。上傳後記得 `e.target.value = ""` 清空，否則同一個檔案無法重選（onChange 不會再觸發）。
+
+### 「預填 + 確認」而非「直接存」
+
+FIT 解析後**填進表單讓使用者確認**，不直接寫入：使用者能檢查數據、改類型、加備註、對應計畫項目。自動化負責省去打字，判斷權留給使用者。
+
+### 自動化不該覆蓋更權威的來源
+
+踩過的坑：偵測到 interval 主段就 `setValue("workoutType", "interval")`，結果**把計畫安排的 easy 覆蓋掉**了。
+
+```typescript
+if (data.mainSet) {
+  if (!plannedWorkout) {
+    // 自由記錄：沒有依據 → 演算法判斷有幫助
+    setValue("workoutType", "interval");
+    fillMainSet();
+  } else if (plannedWorkout.workoutType === "interval") {
+    // 計畫就是 interval → 填主段，類型不動
+    fillMainSet();
+  }
+  // 計畫不是 interval 卻偵測到 → 不填主段（避免語意錯的資料），只提示
+}
+```
+
+原則：**計畫的安排（明確意圖）> 演算法的猜測**。而且自動覆蓋還有副作用——類型被改成 interval 後，「類型不符」的防呆提示永遠不會觸發（它自己改成符合了）。
+
+### 防呆用「提示」不用「強制」
+
+兩種不一致都提示、但不擋：
+
+```tsx
+{/* 選了 interval 但沒偵測到主段 */}
+{!data.mainSet && isInterval && <p className="text-amber-600">⚠️ {t("...noMainSetDetected")}</p>}
+
+{/* 偵測到主段但類型不是 interval */}
+{data.mainSet && !isInterval && <p className="text-amber-600">⚠️ {t("...typeMismatch")}</p>}
+```
+
+演算法不夠準到能當權威（Fartlek、GPS 誤差都可能誤判），使用者也可能有系統想不到的理由。**輔助而非替代判斷**：程式把判斷結果透明呈現，使用者有最終決定權。
+
+### 演算法要有「誤判防護」的測試
+
+`detectMainSet` 用三道防線避免把 easy run 誤判成 interval：
+
+1. **配速門檻**：比中位數快 25% 以上才算主段（原本 10% 太鬆）
+2. **快慢對比**：主段平均要比休息段快 30% 以上
+3. **距離一致**：主段各趟距離差異 < 20%（interval 的特性）
+
+測試不只測「正確案例」，更要測「**不該觸發的案例**」：
+
+```typescript
+it("easy run（起伏波動）不誤判成 interval", () => expect(detectMainSet(easy)).toBeNull());
+it("easy run（中途衝刺、距離雜亂）不誤判", () => expect(detectMainSet(surges)).toBeNull());
+```
+
+用**真實 FIT 資料**當測試案例（10×200m 間歇），未來改演算法時能確保不壞。
+
+### 為什麼 lockfile 一定要 commit
+
+`package.json` 寫版本範圍、`pnpm-lock.yaml` 鎖精確依賴樹。commit lockfile 才能確保「本地 = CI = Railway = Vercel」裝的完全一致。部署用 `--frozen-lockfile`（嚴格照 lockfile），沒 commit 會失敗或裝到不同版本。
+
+反面經驗：lockfile 也會忠實重現**壞掉的依賴組合**——Sprint 6 裝到不相容的 vite-plugin-pwa 後，`pnpm install` 一直照 lockfile 裝回壞的，砍掉 lockfile 重生成才解決。
