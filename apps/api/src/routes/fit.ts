@@ -57,7 +57,7 @@ export const fitRoutes = async (app: FastifyInstance) => {
 
     return reply.send({
       // 整場摘要
-      date: session.startTime?.toISOString?.() ?? null,
+      date: (session.startTime as Date | undefined)?.toISOString?.() ?? null,
       distanceKm: session.totalDistance ? session.totalDistance / 1000 : null,
       durationSec: session.totalTimerTime
         ? Math.round(session.totalTimerTime)
