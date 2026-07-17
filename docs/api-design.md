@@ -481,3 +481,47 @@ FIT 沒有「秒/km」配速     → 自行計算：時間 ÷ 距離(km)
 - 可寫單元測試（用真實 FIT 資料當測試案例）
 - 前後端都能用（目前後端用，未來前端也可即時分析）
 - route 只負責「解析檔案 + 呼叫演算法 + 回傳」，不含業務邏輯
+
+## Sprint 8 新增慣例（laps 儲存）
+
+### 用 Json 存 laps，不另開表
+
+`ActualWorkout.laps Json?` 存 FIT 解析出的每趟資料：
+
+```prisma
+model ActualWorkout {
+  // ...
+  laps Json?   // [{ index, distanceM, durationSec, avgHeartRate, paceSec, isMainSet }]
+}
+```
+
+判斷依據（同 Sprint 3 的 `PlannedWorkout.intervals`）：
+
+- 結構固定但筆數不定（一次訓練 3~30+ 趟）
+- **不需要「依 lap 篩選查詢」**（不會查「所有 4:00 以下的趟」）→ 不用正規化
+- 永遠跟著 workout 一起讀寫 → 沒有獨立生命週期
+
+若未來要跨訓練查詢單趟資料，才需要抽成 `WorkoutLap` 表。現在不過度設計。
+
+### 判斷結果存起來，不重算（snapshot）
+
+存 laps 時就把 `detectMainSet` 的結果標進去：
+
+```typescript
+const mainSetIndexes = new Set(data.mainSet?.mainSetIndexes ?? []);
+setValue("laps", data.laps.map((lap) => ({
+  ...lap,
+  isMainSet: mainSetIndexes.has(lap.index),
+})));
+```
+
+顯示時直接看 `isMainSet`，不用重跑演算法。同 `vdot` / `actualPaceSec` 的 snapshot 思路——存「當下判斷的結果」。未來若讓使用者手動修正主段，改的結果也存在這裡。
+
+### Prisma Json 欄位的 null
+
+```typescript
+laps: input.laps ?? undefined,                       // POST
+if (input.laps !== undefined) data.laps = input.laps ?? undefined;   // PATCH
+```
+
+Prisma 的 Json 欄位傳 `null` 會型別報錯，要用 `undefined`（不設值）或 `Prisma.JsonNull`。Sprint 3 的 `intervals` 踩過同樣的坑。

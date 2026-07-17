@@ -32,7 +32,8 @@ apps/api/
 │       ├── 20260605_add_training_plans_and_workouts/   ← Sprint 2: TrainingPlan + PlannedWorkout
 │       ├── 20260625_add_actual_workouts.../            ← Sprint 3: ActualWorkout + interval 結構
 │       ├── 20260706_add_main_set_pace/                 ← Sprint 4: interval 主段平均配速
-│       └── 20260707_add_personal_records/              ← Sprint 5: PersonalRecord
+│       ├── 20260707_add_personal_records/              ← Sprint 5: PersonalRecord
+│       └── 20260716_add_workout_laps/                  ← Sprint 8: ActualWorkout.laps
 ├── src/
 │   ├── auth/                 ← 認證相關
 │   │   ├── cookie.ts         ← cookie 屬性、跨網域設定
@@ -72,7 +73,8 @@ apps/web/
 │   │   ├── PlanDetailPage.tsx    ← 含完成狀態、完成率、interval 顯示（Sprint 3 擴充）
 │   │   ├── CreateWorkoutPage.tsx ← 記錄/編輯訓練共用（Sprint 3）
 │   │   ├── ProgressPage.tsx      ← 訓練量/配速趨勢圖（Sprint 3）
-│   │   └── PRPage.tsx            ← 個人紀錄 + 進步曲線（Sprint 5）
+│   │   ├── PRPage.tsx            ← 個人紀錄 + 進步曲線（Sprint 5）
+│   │   └── WorkoutDetailPage.tsx ← 訓練詳情 + 每趟配速分析（Sprint 8）
 │   ├── components/
 │   │   ├── ui/               ← shadcn 元件（不放業務邏輯）
 │   │   │   ├── button.tsx
@@ -80,7 +82,9 @@ apps/web/
 │   │   │   ├── input.tsx
 │   │   │   ├── label.tsx
 │   │   │   └── select.tsx
-│   │   └── Layout.tsx        ← 跨頁面 wrapper（top nav + Outlet）
+│   │   ├── Layout.tsx        ← 跨頁面 wrapper（top nav + Outlet + 離線橫幅）
+│   │   ├── LapChart.tsx      ← 每趟配速長條圖 + 目標基準線（Sprint 8）
+│   │   └── IntervalLabel.tsx ← interval 結構顯示（i18n，Sprint 8）
 │   ├── hooks/                ← 自訂 React hooks
 │   │   ├── useMe.ts          ← 取得當前使用者 + 登入登出
 │   │   ├── usePlans.ts       ← 計畫列表 / 詳情 / 刪除
@@ -310,6 +314,31 @@ apps/api：
 ```
 
 ⚠️ Garmin Connect Developer API 需商業用途申請 + 人工審核（Health API 另有約 $5,000 設置費），個人專案不可行。改以「使用者自行匯出 FIT 檔上傳」達成同樣目的——FIT SDK 免費、不需授權。
+
+### Sprint 8 補充（每趟分析 + 訓練詳情頁）
+
+```typescript
+import {
+  // Types
+  WorkoutLap,
+
+  // 純函式
+  formatIntervalParts, // interval 結構 → 零件（文字由元件用 i18n 組）
+} from "@pace-lab/shared";
+```
+
+- `ActualWorkout.laps`（Json）：存 FIT 解析出的每趟資料，含 `isMainSet` 標記（存的時候就標好，顯示時不用重跑演算法）
+- `WorkoutDetailPage`：訓練詳情（唯讀）——完整數據、對照計畫目標、每趟配速分析、編輯／刪除
+- `LapChart`：每趟配速長條圖，以計畫目標配速為基準線（沒目標時退回自身平均）
+- `IntervalLabel`：把「interval 結構的文字組合」從 shared 移到元件（純函式不能用 hook，元件可以）
+
+路由（順序重要）：
+
+```
+/workouts/new        ← 記錄（先）
+/workouts/:id/edit   ← 編輯（先）
+/workouts/:id        ← 詳情（後，否則 "new" 會被當成 id）
+```
 
 ## 文件：`docs/`
 

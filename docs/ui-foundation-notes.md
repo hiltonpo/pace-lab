@@ -883,3 +883,94 @@ it("easy run（中途衝刺、距離雜亂）不誤判", () => expect(detectMain
 `package.json` 寫版本範圍、`pnpm-lock.yaml` 鎖精確依賴樹。commit lockfile 才能確保「本地 = CI = Railway = Vercel」裝的完全一致。部署用 `--frozen-lockfile`（嚴格照 lockfile），沒 commit 會失敗或裝到不同版本。
 
 反面經驗：lockfile 也會忠實重現**壞掉的依賴組合**——Sprint 6 裝到不相容的 vite-plugin-pwa 後，`pnpm install` 一直照 lockfile 裝回壞的，砍掉 lockfile 重生成才解決。
+
+---
+
+## Sprint 8 補充（每趟分析、詳情頁、PWA 更新）
+
+### 圖表只畫需要對比的資料
+
+每趟配速圖**只畫主段**，不畫恢復/熱身：
+
+```typescript
+const mainSetLaps = laps.filter((l) => l.isMainSet && l.paceSec !== null);
+```
+
+理由：全部畫的話 Y 軸範圍變成 4:00~11:00，主段之間的差異（4:11 vs 4:29）被壓縮到看不出來。只畫主段 → Y 軸 4:00~4:30 → 趟間差異放大。**「看趟間掉速」的重點是主段彼此的差異**，恢復段的配速一起畫反而模糊焦點。
+
+### 基準線用「目標」不用「平均」
+
+```typescript
+const baseline = targetPaceSec ?? avgPace;   // 有目標用目標，沒有才用平均
+```
+
+以自身平均當基準會誤導：每趟都達標時，仍有一半會被標成「慢於平均」。在 Daniels 訓練法裡，interval 的配速是「必須命中的目標」——**該問的是「有沒有練到位」，不是「有沒有比自己平均快」**。自由記錄（沒有計畫目標）才退回平均，hint 文案也跟著切換。
+
+`ReferenceLine` 的 label 用 `position: "insideRight"`——`"right"` 會畫到圖表區外被截斷。
+
+### 顯示編號 ≠ 資料編號
+
+FIT 的 lap index 是 3, 5, 7, 9...（含恢復段的原始編號），但使用者關心的是「第幾趟間歇」。過濾主段後重新編號：
+
+```typescript
+const data = mainSetLaps.map((l, i) => ({ ...l, label: `${i + 1}` }));
+```
+
+X 軸與 tooltip 都用 `label`（1,2,3...），不用 `index`——兩處不一致會讓使用者困惑。
+
+### 詳情頁 vs 編輯頁
+
+一開始想把每趟圖放編輯頁（省一個頁面），但語意不對——編輯頁是「改資料」，不是「看分析」。抽出 `WorkoutDetailPage`：
+
+```
+/workouts/:id       詳情（唯讀：數據 + 分析 + 對照目標）
+/workouts/:id/edit  編輯（改資料）
+```
+
+整塊綠色實際數據區改成 `<Link>` 進詳情——比 9px 的「編輯」小連結好點太多（手機尤其）。**行動優先**：小連結在手機上是災難。
+
+### PWA 的更新問題（重要）
+
+部署了新版但看到舊版——Service Worker 快取了 app 外殼。`registerType: "autoUpdate"` 仍不夠：新 SW 會停在 waiting，**要所有分頁關閉才啟用**。
+
+```typescript
+workbox: {
+  globPatterns: [...],
+  skipWaiting: true,     // 新 SW 安裝完立刻啟用（不等待）
+  clientsClaim: true,    // 啟用後立刻接管所有已開分頁
+  runtimeCaching: [...],
+}
+```
+
+兩個要一起：`skipWaiting` 解決「卡在 waiting」、`clientsClaim` 解決「啟用了但不管已開的分頁」。預設保守是為了避免大型 app 的版本混亂；個人專案開啟更方便。
+
+⚠️ 加上之後**還要手動清一次**（F12 → Application → Storage → Clear site data）——因為現在服務你的是「沒有 skipWaiting 的舊 SW」。之後才會自動更新。
+
+除錯技巧：**開無痕視窗**——沒有舊 SW，看得到新版就確定是快取問題，不是部署失敗。
+
+### 登出要清三層
+
+```typescript
+onSuccess: async () => {
+  if ("caches" in window) await caches.delete("api-cache");  // 1. SW 的 API 快取
+  queryClient.clear();                                        // 2. TanStack Query 快取
+  window.location.href = "/";                                 // 3. 硬導向（清所有 state）
+}
+```
+
+原本只 `setQueryData(["me"], null)` 不夠——`["plans"]` / `["workouts"]` / `["prs"]` 的快取都還在。`clear()` 一次清光。登出用 `window.location.href` 硬導向（整頁重載）比 `navigate()` 徹底。
+
+### dev 能跑 ≠ build 能過
+
+```
+pnpm dev   → tsx，不做完整型別檢查
+pnpm build → tsc，嚴格檢查
+```
+
+FIT SDK 的 `startTime` runtime 是 Date、但型別宣告是 `DateTime | number` → dev 正常、Railway build 掛掉。用型別守衛解：
+
+```typescript
+date: session.startTime instanceof Date ? session.startTime.toISOString() : null,
+```
+
+**push 前先本地 build 一次**（或 `pnpm --filter xxx typecheck`），別讓 CI 才發現型別錯誤。
