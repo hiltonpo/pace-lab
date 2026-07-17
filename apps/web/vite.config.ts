@@ -35,6 +35,12 @@ export default defineConfig({
         // 靜態資源（JS/CSS/圖片/字型）自動 precache
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
 
+        //  新 SW 立刻取代舊的
+        skipWaiting: true, 
+
+        // 立刻接管所有分頁
+        clientsClaim: true,
+
         // API 請求的 runtime 快取策略
         runtimeCaching: [
           {
