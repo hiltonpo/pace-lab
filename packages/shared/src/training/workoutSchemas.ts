@@ -16,6 +16,18 @@ export const FEELING_OPTIONS = [
   "tired",
   "exhausted",
 ] as const;
+
+/** 單趟資料（來自 FIT 檔的 lap） */
+export const workoutLapSchema = z.object({
+  index: z.number().int(),
+  distanceM: z.number().nullable(),
+  durationSec: z.number().int().nullable(),
+  avgHeartRate: z.number().int().nullable(),
+  paceSec: z.number().int().nullable(),
+  /** 是否為 interval 主段（快跑段） */
+  isMainSet: z.boolean().optional(),
+});
+export type WorkoutLap = z.infer<typeof workoutLapSchema>;
 // ============================================================================
 // POST /api/workouts - 建立訓練紀錄
 // ============================================================================
@@ -107,6 +119,8 @@ export const workoutObjectSchema = z.object({
     .max(1800, { message: "errors.pace.unreasonable" })
     .optional()
     .nullable(),
+  /** 每趟資料（FIT 匯入時自動帶入） */
+  laps: z.array(workoutLapSchema).optional().nullable(),
 });
 
 export const createWorkoutInputSchema = workoutObjectSchema.refine(
@@ -181,6 +195,7 @@ export const actualWorkoutSchema = z.object({
   feeling: z.string().nullable(),
   notes: z.string().nullable(),
   createdAt: z.string().datetime(),
+  laps: z.array(workoutLapSchema).nullable(),
 });
 
 export type ActualWorkoutResponse = z.infer<typeof actualWorkoutSchema>;

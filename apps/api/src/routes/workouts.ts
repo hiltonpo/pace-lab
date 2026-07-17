@@ -80,6 +80,7 @@ export async function workoutsRoutes(app: FastifyInstance) {
         temperatureC: input.temperatureC ?? null,
         feeling: input.feeling ?? null,
         notes: input.notes ?? null,
+        laps: input.laps ?? undefined, // Prisma Json：undefined = 不設值（存 null）
       },
     });
 
@@ -219,6 +220,8 @@ export async function workoutsRoutes(app: FastifyInstance) {
     }
     if (input.mainSetPaceSec !== undefined)
       data.mainSetPaceSec = input.mainSetPaceSec;
+
+    if (input.laps !== undefined) data.laps = input.laps ?? undefined;
 
     const updated = await prisma.actualWorkout.update({
       where: { id: paramsResult.data.id },

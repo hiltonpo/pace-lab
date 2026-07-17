@@ -1,18 +1,19 @@
 import type { IntervalStructure } from "./generatePlan.js";
 
-/** interval 結構 → 人類可讀字串,例:"8 × 1km, 3min 恢復" */
-export const formatInterval = (intervals: IntervalStructure): string => {
+/** interval 結構  */
+export const formatIntervalParts = (intervals: IntervalStructure) => {
   const { sets, setDistanceMeters, recoveryDurationSec, recoveryType } =
     intervals;
-  // 距離:1000m 顯示 1km,否則顯示 Nm
-  const dist =
-    setDistanceMeters >= 1000
-      ? `${setDistanceMeters / 1000}km`
-      : `${setDistanceMeters}m`;
-  // 恢復時間:秒 → 分
-  const recoveryMin = Math.round(recoveryDurationSec / 60);
-  const recovery = recoveryType === "easy" ? "慢跑" : "休息";
-  return `${sets} × ${dist}・${recoveryMin}min ${recovery}`;
+
+  return {
+    sets, // 趟數
+    distance:
+      setDistanceMeters >= 1000
+        ? `${setDistanceMeters / 1000}km`
+        : `${setDistanceMeters}m`, // 距離（已格式化）
+    recoveryMin: Math.round(recoveryDurationSec / 60), // 恢復幾分鐘
+    recoveryType, // "easy" or "rest"
+  };
 };
 
 /**

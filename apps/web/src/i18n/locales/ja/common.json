@@ -90,8 +90,10 @@
       "mainSet": "主要区間",
       "faster": "速い",
       "slower": "遅い",
-      "onTarget": "目標達成"
+      "onTarget": "目標達成",
+      "intervalFormat": "{{sets}} × {{distance}}・{{min}}分 {{recovery}}"
     },
+    "recovery": { "easy": "ジョグ", "rest": "レスト" },
     "workout": {
       "rest": "休息",
       "easy": "Easy",
@@ -162,7 +164,18 @@
       "mainSetDetected": "インターバルを検出：{{sets}} × {{distance}}m、主要区間の平均 {{pace}}/km",
       "noMainSetDetected": "インターバル構造を検出できませんでした。ラップ記録があるか確認するか、主要区間のペースを手動で入力してください",
       "typeMismatch": "インターバル構造を検出しましたが、種目がインターバルではありません。必要に応じて種目を変更してください"
-    }
+    },
+    "laps": {
+      "title": "ラップ別ペース",
+      "avg": "平均",
+      "lapN": "{{n}} 本目",
+      "hintTarget": "濃い色 = 目標ペース達成、薄い色 = 未達成",
+      "hintAvg": "濃い色 = 平均より速い、薄い色 = 平均より遅い"
+    },
+    "notFound": "記録が見つかりません",
+    "deleteConfirm": "この記録を削除しますか？",
+    "deleteWarning": "この操作は取り消せません。記録は完全に削除されます。",
+    "detail": { "conditions": "コンディション" }
   },
   "pr": {
     "title": "自己ベスト",

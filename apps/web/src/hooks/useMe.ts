@@ -27,9 +27,15 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => apiPost("/api/auth/logout"),
-    onSuccess: () => {
-      // 登出成功 → 把快取的「我是誰」清掉，畫面會自動變未登入
-      queryClient.setQueryData(["me"], null);
+    onSuccess: async () => {
+      // 清 Service Worker 的 API 快取（PWA 離線快取的登入後資料）
+      if ("caches" in window) {
+        await caches.delete("api-cache");
+      }
+      // 清除所有 TanStack Query 快取（不只 me，計畫/訓練/PR 都要清）
+      queryClient.clear();
+      // 硬導向首頁（整頁重載，確保所有 state 歸零）
+      window.location.href = "/";
     },
   });
 }

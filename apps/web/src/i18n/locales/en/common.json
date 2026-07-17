@@ -90,8 +90,10 @@
       "mainSet": "Main",
       "faster": "faster",
       "slower": "slower",
-      "onTarget": "on target"
+      "onTarget": "on target",
+      "intervalFormat": "{{sets}} × {{distance}} w/ {{min}}min {{recovery}}"
     },
+    "recovery": { "easy": "jog", "rest": "rest" },
     "workout": {
       "rest": "Rest",
       "easy": "Easy",
@@ -162,7 +164,18 @@
       "mainSetDetected": "Interval detected: {{sets}} × {{distance}}m, main set avg {{pace}}/km",
       "noMainSetDetected": "No interval structure detected. Check that laps were recorded, or enter the main-set pace manually",
       "typeMismatch": "Interval structure detected, but the workout type isn't interval. Change the type if needed"
-    }
+    },
+    "laps": {
+      "title": "Lap Splits",
+      "avg": "Avg",
+      "lapN": "Lap {{n}}",
+      "hintTarget": "Dark = hit target pace, light = missed",
+      "hintAvg": "Dark = faster than average, light = slower"
+    },
+    "notFound": "Workout not found",
+    "deleteConfirm": "Delete this workout?",
+    "deleteWarning": "This action cannot be undone. The workout data will be permanently deleted.",
+    "detail": { "conditions": "Conditions" }
   },
   "pr": {
     "title": "Personal Records",

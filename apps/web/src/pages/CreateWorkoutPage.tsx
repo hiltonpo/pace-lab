@@ -9,7 +9,6 @@ import {
   parseDuration,
   formatDuration,
   formatPace,
-  formatInterval,
   WEATHER_OPTIONS,
   FEELING_OPTIONS,
   type CreateWorkoutInput,
@@ -24,6 +23,7 @@ import { usePlanDetail } from "@/hooks/usePlans";
 import { useOnline } from "@/hooks/useOnline";
 import { useParseFit } from "@/hooks/useFitUpload";
 
+import { IntervalLabel } from "@/components/IntervalLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -218,6 +218,18 @@ export function CreateWorkoutPage() {
             setValue("workoutType", "interval");
           }
         }
+
+        //  存laps（標記主段）
+        if (data.laps && data.laps.length > 0) {
+          const mainSetIndexes = new Set(data.mainSet?.mainSetIndexes ?? []);
+          setValue(
+            "laps",
+            data.laps.map((lap) => ({
+              ...lap,
+              isMainSet: mainSetIndexes.has(lap.index),
+            }))
+          );
+        }
       },
     });
     // 清空 input，讓同一個檔能重選
@@ -270,7 +282,10 @@ export function CreateWorkoutPage() {
             {/* interval 結構 */}
             {plannedWorkout.intervals && (
               <p className="text-primary font-medium">
-                🔁 {formatInterval(plannedWorkout.intervals)}
+                🔁{" "}
+                <IntervalLabel
+                  intervals={plannedWorkout.intervals}
+                ></IntervalLabel>
               </p>
             )}
             {/* warmup/cooldown 提示 */}

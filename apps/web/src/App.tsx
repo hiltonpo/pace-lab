@@ -6,6 +6,7 @@ import { PlanDetailPage } from "./pages/PlanDetailPage";
 import { CreateWorkoutPage } from "./pages/CreateWorkoutPage";
 import { ProgressPage } from "./pages/ProgressPage";
 import { PRPage } from "./pages/PRPage";
+import { WorkoutDetailPage } from "./pages/WorkoutDetailPage";
 
 export function App() {
   return (
@@ -17,6 +18,7 @@ export function App() {
           <Route path="/plans/:id" element={<PlanDetailPage />} />
           <Route path="/workouts/new" element={<CreateWorkoutPage />} />
           <Route path="/workouts/:id/edit" element={<CreateWorkoutPage />} />
+          <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/prs" element={<PRPage />} />
         </Route>

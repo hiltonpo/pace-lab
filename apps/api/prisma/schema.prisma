@@ -91,6 +91,7 @@ model ActualWorkout {
   actualDurationSec Int
   actualPaceSec     Int?
   mainSetPaceSec    Int?   // interval 主段平均配速（秒/km），只有 interval 用
+  laps           Json?     // 每趟資料（來自 FIT）
   avgHeartRate      Int?
   maxHeartRate      Int?
   rpe               Int?

@@ -5,16 +5,16 @@ import {
   calculateTrainingPaces,
   formatDuration,
   formatPace,
-  formatInterval,
   PACE_SHORT_LABELS,
   type PlannedWorkoutResponse,
   type ActualWorkoutResponse,
 } from "@pace-lab/shared";
 import { usePlanDetail, useDeletePlan } from "../hooks/usePlans";
+import { IntervalLabel } from "@/components/IntervalLabel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWorkouts } from "@/hooks/useWorkouts";
-import { PlusCircle, PencilLineIcon } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -115,10 +115,6 @@ export const PlanDetailPage = () => {
     }
     workoutsByWeek.get(w.weekNumber)!.push(w);
   });
-  // 暫時 debug:看有沒有 interval workout 帶 intervals 資料
-  const intervalWorkouts = plan.plannedWorkouts.filter(
-    (w) => w.workoutType === "interval"
-  );
 
   const handleDelete = () => {
     deleteMutation.mutate(plan.id, {
@@ -460,7 +456,7 @@ const WorkoutCell = ({
         {/* interval：顯示結構取代總公里數 */}
         {workout.intervals ? (
           <p className="text-[10px] text-destructive/80 dark:text-destructive/90 leading-tight">
-            {formatInterval(workout.intervals)}
+            <IntervalLabel intervals={workout.intervals} />
           </p>
         ) : (
           /* 非 interval：顯示總公里數 */
@@ -484,21 +480,15 @@ const WorkoutCell = ({
         )}
       </div>
 
-      {/* 已完成：實際數據 */}
+      {/* 已完成：實際數據 → 點擊進詳情 */}
       {isCompleted && actual && (
-        <div className="mt-1 rounded bg-green-50 dark:bg-green-950/40 px-1.5 py-1 space-y-0.5">
-          <div className="flex items-center justify-between">
-            <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
-              {t("plans.detail.actual")}
-            </span>
-            <Link
-              to={`/workouts/${actual.id}/edit`}
-              className="flex items-center gap-0.5 text-[9px] text-muted-foreground hover:text-primary"
-            >
-              <PencilLineIcon className="w-2.5 h-2.5" />
-              {t("common.edit")}
-            </Link>
-          </div>
+        <Link
+          to={`/workouts/${actual.id}`}
+          className="mt-1 block rounded bg-green-50 dark:bg-green-950/40 px-1.5 py-1 space-y-0.5 hover:ring-1 hover:ring-primary/50 transition-all"
+        >
+          <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
+            {t("plans.detail.actual")}
+          </span>
 
           {/* interval：主段配速 */}
           {workout.workoutType === "interval" && actual.mainSetPaceSec ? (
@@ -506,7 +496,6 @@ const WorkoutCell = ({
               {t("plans.detail.mainSet")} {formatPace(actual.mainSetPaceSec)}
             </p>
           ) : (
-            /* 一般：距離 + 整場配速 */
             <>
               <p className="tabular-nums text-green-700 dark:text-green-300 font-semibold">
                 {actual.actualDistanceKm}km
@@ -518,6 +507,7 @@ const WorkoutCell = ({
               )}
             </>
           )}
+
           {/* quality workout 才顯示配速差異 */}
           {isHighIntensity && workout.targetPaceSec && (
             <PaceDiff
@@ -529,7 +519,7 @@ const WorkoutCell = ({
               target={workout.targetPaceSec}
             />
           )}
-        </div>
+        </Link>
       )}
 
       {/* 未完成 + 可記錄：記錄按鈕 */}
