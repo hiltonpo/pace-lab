@@ -22,3 +22,6 @@ build/
 # prisma
 *.db
 *.db-journal
+
+# TypeScript 增量編譯快取
+*.tsbuildinfo
