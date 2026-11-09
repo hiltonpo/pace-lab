@@ -4,7 +4,7 @@ A personalized marathon training plan generator and tracker, built as a full-sta
 
 ## Live Demo
 
-- **Web**: https://pace-lab-web-58b4.vercel.app
+- **Web**: https://pace-lab-web.vercel.app/
 - **API**: https://pace-labapi-production.up.railway.app
 - **Health Check**: https://pace-labapi-production.up.railway.app/api/health
 
